@@ -1,0 +1,1231 @@
+0001   0000              
+0002   0000             
+0003   0000             ; CSSCGC 2007 
+0004   0000             ; Crap Games Competition 2007 Submission
+0005   0000             ; 2007 Chris Walsh
+0006   0000             ; Shave Rick's Beard
+0007   0000             ; -------------------------------
+0008   0000             ;
+0009   0000             ; Use Tabs: {16, 20, 24, step 8}
+0010   0000             
+0011   0000             
+0012   0000             
+0013   0000             
+0014   0000             ; -----------------------
+0015   0000             ; DEFINES
+0016   0000             ; -----------------------
+0017   0000             
+0018   0000             ; -----------------------
+0019   0000             ; END OF DEFINES
+0020   0000             ; -----------------------
+0021   0000             
+0022   0000             
+0023   0000             
+0024   0000             
+0025   0000             
+0026   0000             ; -----------------------
+0027   0000             ; MACROS
+0028   0000             ; -----------------------
+0029   0000             
+0030   0000             
+0031   0000             ; STEPDOWN
+0032   0000             ; Moves screen address held in HL down by one pizel 
+0033   0000             ; Uses: A
+0034   0000             #DEFINE	STEPDOWN INC H\ LD A,H\ AND 7\ JR NZ,$+12\ LD A,L\ ADD A,32\ LD L,A\ JR C,$+6\ LD A,H\ SUB 8\ LD H,A
+0035   0000             
+0036   0000             
+0037   0000             ; -----------------------
+0038   0000             ; END OF MACROS
+0039   0000             ; -----------------------
+0040   0000             
+0041   0000             
+0042   0000             
+0043   0000             
+0044   0000             
+0045   0000             
+0046   0000             
+0047   0000             ; MEMORY MAP
+0048   0000             ;
+0049   0000             ; Address	Length	Description
+0050   0000             ; --------	------	----------------------------------------------------------------------
+0051   0000             ; 32768      	6144	Backbuffer copy of Rick's Mug
+0052   0000             ; 49152	*		Code
+0053   0000             
+0054   0000             BitmapAddr:	.equ 32768
+0055   0000             
+0056   0000             	
+0057   C000             	.org 49152
+0058   C000             	
+0059   C000             
+0060   C000             	; INITIALISE
+0061   C000             	
+0062   C000             	; Draw Rick Face
+0063   C000 CD 1B C0    	CALL LoadScreen
+0064   C003             	
+0065   C003             	; Reset Timer
+0066   C003 CD E2 C1    	CALL TimerReset
+0067   C006             	
+0068   C006             	; Init Beard
+0069   C006 CD 83 C3    	CALL InitBeard
+0070   C009             	
+0071   C009             	
+0072   C009             	; MAIN LOOP
+0073   C009             MainLoop1:	
+0074   C009 CD 91 C3    	CALL ProcessBeard
+0075   C00C CD B8 C0    	CALL KeyboardScan	
+0076   C00F 76          	HALT
+0077   C010 CD 68 C2    	CALL PlotFace
+0078   C013 CD E4 C2    	CALL PlotCursor		
+0079   C016             	;CALL CompareScreen3Opt
+0080   C016 CD EE C1    	CALL TimerDec		
+0081   C019             
+0082   C019 18 EE       	JR MainLoop1
+0083   C01B             	
+0084   C01B             
+0085   C01B             
+0086   C01B             ; LoadScreen
+0087   C01B             ; Copies Face to Screen
+0088   C01B             LoadScreen:
+0089   C01B 21 00 80    	LD HL, BitmapAddr
+0090   C01E 11 00 40    	LD DE, 16384
+0091   C021 01 00 18    	LD BC, 6144
+0092   C024 ED B0       	LDIR	
+0093   C026 C9          	RET
+0094   C027             
+0095   C027             
+0096   C027             ; FlashInv
+0097   C027             ; White on Black (Inverted)
+0098   C027             FlashInv:
+0099   C027 3E 47       	LD A, 7+64
+0100   C029 21 00 58    FlashInv0:	LD HL, 22528
+0101   C02C 11 01 58    	LD DE, 22529
+0102   C02F 01 FF 02    	LD BC, 767
+0103   C032 77          	LD (HL), A
+0104   C033 ED B0       	LDIR
+0105   C035 1F          	RRA
+0106   C036 1F          	RRA
+0107   C037 1F          	RRA
+0108   C038 E6 07       	AND 7
+0109   C03A D3 FE       	OUT (254), A
+0110   C03C C9          	RET
+0111   C03D             	
+0112   C03D             ; FlashNorm
+0113   C03D             ; Black on White
+0114   C03D             FlashNorm:
+0115   C03D 3E 38       	LD A, 56
+0116   C03F 18 E8       	JR FlashInv0
+0117   C041             
+0118   C041             
+0119   C041             
+0120   C041             
+0121   C041             
+0122   C041             ; CompareScreen3Opt
+0123   C041             ; Optimised version of CompareScreen3.
+0124   C041             ; Only actually updates every 10th time.  Returns last score otherwise
+0125   C041             ; TODO: Make this the RIGHT section of screen
+0126   C041             CompareScreen3Opt:
+0127   C041 3A 45 C4    	LD A, (CompOpt)
+0128   C044 B7          	OR A
+0129   C045 28 09       	JR Z, _CS1
+0130   C047             	
+0131   C047             	; Quick version
+0132   C047 3D          	DEC A
+0133   C048 32 45 C4    	LD (CompOpt), A
+0134   C04B ED 4B 43 C4 	LD BC, (LastCompValue)
+0135   C04F C9          	RET
+0136   C050             	
+0137   C050             	; Slow version
+0138   C050 3A 46 C4    _CS1:	LD A, (CompOptMax)
+0139   C053 32 45 C4    	LD (CompOpt), A
+0140   C056 CD 5E C0    	CALL CompareScreen3
+0141   C059 ED 43 43 C4 	LD (LastCompValue), BC
+0142   C05D             	
+0143   C05D             	
+0144   C05D             	; Convert to a percentage
+0145   C05D             	; BC/(192*8) * 100
+0146   C05D             	
+0147   C05D             	
+0148   C05D             	
+0149   C05D             	
+0150   C05D             	
+0151   C05D C9          	RET
+0152   C05E             	
+0153   C05E             
+0154   C05E             ; CompareScreen3
+0155   C05E             ; Compares the bottom 2/3rds of the screen for a byte/byte match.
+0156   C05E             ; Counts number of mismatches.  Returns result in BC.
+0157   C05E             ; TODO: Make this the RIGHT section of screen
+0158   C05E             CompareScreen3:
+0159   C05E 21 18 40    	LD HL, 16384+24
+0160   C061 11 18 80    	LD DE, BitmapAddr+24
+0161   C064 06 C0       	LD B, 192
+0162   C066 DD 21 00 00 	LD IX, 0		; Count
+0163   C06A             	
+0164   C06A             _CSloop:
+0165   C06A 1A          	LD A, (DE)
+0166   C06B BE          	CP (HL)
+0167   C06C 28 02       	JR Z, _CSskip0
+0168   C06E DD 23       	INC IX
+0169   C070 2C          _CSskip0:	INC L
+0170   C071 1C          	INC E
+0171   C072             
+0172   C072 1A          	LD A, (DE)
+0173   C073 BE          	CP (HL)
+0174   C074 28 02       	JR Z, _CSskip1
+0175   C076 DD 23       	INC IX
+0176   C078 2C          _CSskip1:	INC L
+0177   C079 1C          	INC E
+0178   C07A             
+0179   C07A 1A          	LD A, (DE)
+0180   C07B BE          	CP (HL)
+0181   C07C 28 02       	JR Z, _CSskip2
+0182   C07E DD 23       	INC IX
+0183   C080 2C          _CSskip2:	INC L
+0184   C081 1C          	INC E
+0185   C082             
+0186   C082 1A          	LD A, (DE)
+0187   C083 BE          	CP (HL)
+0188   C084 28 02       	JR Z, _CSskip3
+0189   C086 DD 23       	INC IX
+0190   C088 2C          _CSskip3:	INC L
+0191   C089 1C          	INC E
+0192   C08A             
+0193   C08A 1A          	LD A, (DE)
+0194   C08B BE          	CP (HL)
+0195   C08C 28 02       	JR Z, _CSskip4
+0196   C08E DD 23       	INC IX
+0197   C090 2C          _CSskip4:	INC L
+0198   C091 1C          	INC E
+0199   C092             
+0200   C092 1A          	LD A, (DE)
+0201   C093 BE          	CP (HL)
+0202   C094 28 02       	JR Z, _CSskip5
+0203   C096 DD 23       	INC IX
+0204   C098 2C          _CSskip5:	INC L
+0205   C099 1C          	INC E
+0206   C09A             
+0207   C09A 1A          	LD A, (DE)
+0208   C09B BE          	CP (HL)
+0209   C09C 28 02       	JR Z, _CSskip6
+0210   C09E DD 23       	INC IX
+0211   C0A0 2C          _CSskip6:	INC L
+0212   C0A1 1C          	INC E
+0213   C0A2             
+0214   C0A2 1A          	LD A, (DE)
+0215   C0A3 BE          	CP (HL)
+0216   C0A4 28 02       	JR Z, _CSskip7
+0217   C0A6 DD 23       	INC IX
+0218   C0A8 2C          _CSskip7:	INC L
+0219   C0A9 1C          	INC E
+0220   C0AA             
+0221   C0AA 78          	LD A, B	; Save B
+0222   C0AB 01 18 00    	LD BC, 24
+0223   C0AE 09          	ADD HL, BC
+0224   C0AF EB          	EX DE, HL
+0225   C0B0 09          	ADD HL, BC
+0226   C0B1             	;EX DE, HL	; Doesn't matter whether HL or DE are one way or another
+0227   C0B1 47          	LD B, A	; Restore B
+0228   C0B2             	
+0229   C0B2 10 B6       	DJNZ _CSloop
+0230   C0B4             	
+0231   C0B4             	; Put Result into BC
+0232   C0B4 DD E5       	PUSH IX
+0233   C0B6 C1          	POP BC
+0234   C0B7 C9          	RET
+0235   C0B8             
+0236   C0B8             
+0237   C0B8             ; KeyboardScan
+0238   C0B8             ; Scans the InterfaceII keys and the QAOP keys for movement and updates as necessary
+0239   C0B8             KeyboardScan:
+0240   C0B8 DD 21 3F C4 	LD IX, XPosition
+0241   C0BC             	
+0242   C0BC             	; Save current position as last position
+0243   C0BC DD 7E 00    	LD A, (IX+0)
+0244   C0BF DD 77 02    	LD (IX+2), A
+0245   C0C2 DD 7E 01    	LD A, (IX+1)
+0246   C0C5 DD 77 03    	LD (IX+3), A
+0247   C0C8             	
+0248   C0C8 01 FE EF    	LD BC, KeyPort06
+0249   C0CB ED 78       	IN A, (C)
+0250   C0CD 47          	LD B, A
+0251   C0CE             
+0252   C0CE             _Up1:	
+0253   C0CE             	; "7" = Up
+0254   C0CE CB 58       	BIT 3, B
+0255   C0D0 20 0A       	JR NZ, _Down1
+0256   C0D2 DD 7E 01    	LD A, (IX+1)
+0257   C0D5 FE 02       	CP 2
+0258   C0D7 38 03       	JR C, _Down1
+0259   C0D9 DD 35 01    	DEC (IX+1)
+0260   C0DC             _Down1:
+0261   C0DC             	; "6" = Down
+0262   C0DC CB 60       	BIT 4, B
+0263   C0DE 20 0A       	JR NZ, _Right1
+0264   C0E0 DD 7E 01    	LD A, (IX+1)
+0265   C0E3 FE AF       	CP 192-17
+0266   C0E5 30 03       	JR NC, _Right1
+0267   C0E7 DD 34 01    	INC (IX+1)
+0268   C0EA             _Right1:
+0269   C0EA             	; "8" = Right
+0270   C0EA CB 50       	BIT 2, B
+0271   C0EC 20 0A       	JR NZ, _Left1
+0272   C0EE DD 7E 00    	LD A, (IX+0)
+0273   C0F1 FE F0       	CP 256-16
+0274   C0F3 30 03       	JR NC, _Left1
+0275   C0F5 DD 34 00    	INC (IX+0)
+0276   C0F8             _Left1:
+0277   C0F8             	; "9" = Left
+0278   C0F8 CB 48       	BIT 1, B
+0279   C0FA 20 0A       	JR NZ, _Up2
+0280   C0FC DD 7E 00    	LD A, (IX+0)
+0281   C0FF FE 02       	CP 2
+0282   C101 38 03       	JR C, _Up2
+0283   C103 DD 35 00    	DEC (IX+0)
+0284   C106             
+0285   C106             
+0286   C106             
+0287   C106             
+0288   C106             
+0289   C106             
+0290   C106             _Up2:	
+0291   C106 01 FE DF    	LD BC, KeyPortPY
+0292   C109 ED 78       	IN A, (C)
+0293   C10B 47          	LD B, A
+0294   C10C             
+0295   C10C             	; "P" = Up
+0296   C10C CB 40       	BIT 0, B
+0297   C10E 20 0A       	JR NZ, _Down2
+0298   C110 DD 7E 01    	LD A, (IX+1)
+0299   C113 FE 02       	CP 2
+0300   C115 38 03       	JR C, _Down2
+0301   C117 DD 35 01    	DEC (IX+1)
+0302   C11A             _Down2:
+0303   C11A             	; "O" = Down
+0304   C11A CB 48       	BIT 1, B
+0305   C11C 20 0A       	JR NZ, _Right2
+0306   C11E DD 7E 01    	LD A, (IX+1)
+0307   C121 FE AF       	CP 192-17
+0308   C123 30 03       	JR NC, _Right2
+0309   C125 DD 34 01    	INC (IX+1)
+0310   C128             _Right2:
+0311   C128             	; "Q" = Right
+0312   C128 01 FE FD    	LD BC, KeyPortAG
+0313   C12B ED 78       	IN A, (C)
+0314   C12D CB 47       	BIT 0, A
+0315   C12F 20 0A       	JR NZ, _Left2
+0316   C131 DD 7E 00    	LD A, (IX+0)
+0317   C134 FE F0       	CP 256-16
+0318   C136 30 03       	JR NC, _Left2
+0319   C138 DD 34 00    	INC (IX+0)
+0320   C13B             _Left2:
+0321   C13B             	; "A" = Left
+0322   C13B 01 FE FB    	LD BC, KeyPortQT
+0323   C13E ED 78       	IN A, (C)
+0324   C140 CB 47       	BIT 0, A
+0325   C142 20 0A       	JR NZ, _End
+0326   C144 DD 7E 00    	LD A, (IX+0)
+0327   C147 FE 02       	CP 2
+0328   C149 38 03       	JR C, _End
+0329   C14B DD 35 00    	DEC (IX+0)
+0330   C14E             
+0331   C14E             _End:
+0332   C14E             
+0333   C14E C9          	RET
+0334   C14F             
+0335   C14F             
+0336   C14F             DisableFlashEyes:
+0337   C14F F5          	PUSH AF	; Holds important info where it is called
+0338   C150 3E 38       	LD A, 56
+0339   C152 18 03       	JR _EFE1
+0340   C154             EnableFlashEyes:
+0341   C154 F5          	PUSH AF	; Holds important info where it is called
+0342   C155 3E B8       	LD A, 128+56;242
+0343   C157 21 ED 58    _EFE1:	LD HL, 22528 + (7 * 32) + 13
+0344   C15A 77          	LD (HL), A
+0345   C15B             	
+0346   C15B 11 20 00    	LD DE, 32
+0347   C15E 19          	ADD HL, DE	
+0348   C15F 77          	LD (HL), A
+0349   C160             	
+0350   C160 11 00 01    	LD DE, 256
+0351   C163 19          	ADD HL, DE
+0352   C164 77          	LD (HL), A
+0353   C165             	
+0354   C165 11 20 00    	LD DE, 32
+0355   C168 19          	ADD HL, DE	
+0356   C169 77          	LD (HL), A
+0357   C16A F1          _WinkExit	POP AF
+0358   C16B C9          	RET
+0359   C16C             
+0360   C16C             
+0361   C16C             WinkAnim:
+0362   C16C F5          	PUSH AF
+0363   C16D             	
+0364   C16D FE 39       	CP $39	; Too Early?
+0365   C16F 38 F9       	JR C, _WinkExit
+0366   C171 FE 41       	CP $41	; Too Late?
+0367   C173 30 F5       	JR NC, _WinkExit
+0368   C175 1F          	RRA
+0369   C176 38 05       	JR C, WinkAnimUp
+0370   C178 CD A4 C1    	CALL WinkDown
+0371   C17B 18 ED       	JR _WinkExit
+0372   C17D CD 82 C1    WinkAnimUp:	CALL WinkUp
+0373   C180 18 E8       	JR _WinkExit
+0374   C182             	; 3->2 = 31h->38h
+0375   C182             	; 2->1 = 39h->40h
+0376   C182             	; 1->0 = 41h->48h
+0377   C182             
+0378   C182             
+0379   C182             WinkUp:
+0380   C182 21 AB 48    	LD HL,18603		; (13down, 10across) = 16384 + 2048 + 5*32 + 11
+0381   C185 06 38       	LD B, 56			; 7 chars down
+0382   C187 5E          _WinkUpLoop:	LD E, (HL)
+0383   C188 36 00       	LD (HL), 0
+0384   C18A 2D          	DEC L
+0385   C18B 56          	LD D, (HL)
+0386   C18C 73          	LD (HL), E
+0387   C18D 2D          	DEC L
+0388   C18E 72          	LD (HL), D
+0389   C18F 2C          	INC L
+0390   C190 2C          	INC L
+0391   C191 24          	STEPDOWN
+0391   C192 7C          
+0391   C193 E6 07       
+0391   C195 20 0A       
+0391   C197 7D          
+0391   C198 C6 20       
+0391   C19A 6F          
+0391   C19B 38 04       
+0391   C19D 7C          
+0391   C19E D6 08       
+0391   C1A0 67          
+0392   C1A1 10 E4       	DJNZ _WinkUpLoop
+0393   C1A3 C9          	RET
+0394   C1A4             
+0395   C1A4             WinkDown:
+0396   C1A4 21 A9 48    	LD HL,18601		; (13down, 10across) = 16384 + 2048 + 5*32 + 9
+0397   C1A7 06 38       	LD B, 56			; 7 chars down
+0398   C1A9 5E          _WinkDnLoop:	LD E, (HL)
+0399   C1AA 36 00       	LD (HL), 0
+0400   C1AC 2C          	INC L
+0401   C1AD 56          	LD D, (HL)
+0402   C1AE 73          	LD (HL), E
+0403   C1AF 2C          	INC L
+0404   C1B0 72          	LD (HL), D
+0405   C1B1 2D          	DEC L
+0406   C1B2 2D          	DEC L
+0407   C1B3 24          	STEPDOWN
+0407   C1B4 7C          
+0407   C1B5 E6 07       
+0407   C1B7 20 0A       
+0407   C1B9 7D          
+0407   C1BA C6 20       
+0407   C1BC 6F          
+0407   C1BD 38 04       
+0407   C1BF 7C          
+0407   C1C0 D6 08       
+0407   C1C2 67          
+0408   C1C3 10 E4       	DJNZ _WinkDnLoop
+0409   C1C5 C9          	RET
+0410   C1C6 C9          	RET
+0411   C1C7             
+0412   C1C7             FinalWink:
+0413   C1C7 0E 20       	LD C, 32
+0414   C1C9             
+0415   C1C9 C5          _FW0:	PUSH BC
+0416   C1CA CD 82 C1    	CALL WinkUp
+0417   C1CD C1          	POP BC
+0418   C1CE             	
+0419   C1CE 41          	LD B, C
+0420   C1CF 76          _FW1:	HALT
+0421   C1D0 10 FD       	DJNZ _FW1
+0422   C1D2             	
+0423   C1D2 C5          	PUSH BC
+0424   C1D3 CD A4 C1    	CALL WinkDown
+0425   C1D6 C1          	POP BC
+0426   C1D7             
+0427   C1D7 41          	LD B, C
+0428   C1D8 76          _FW2:	HALT
+0429   C1D9 10 FD       	DJNZ _FW2
+0430   C1DB             	
+0431   C1DB 79          	LD A, C
+0432   C1DC 1F          	RRA		; (NOT RRA) WITH FLAGS
+0433   C1DD 4F          	LD C, A
+0434   C1DE B7          	OR A
+0435   C1DF 20 E8       	JR NZ, _FW0
+0436   C1E1 C9          	RET
+0437   C1E2             
+0438   C1E2             ; TimerReset
+0439   C1E2             ; Set timer to 50 seconds
+0440   C1E2             TimerReset:
+0441   C1E2             	; Set timer to 500
+0442   C1E2 21 58 C5    	LD HL, Timer
+0443   C1E5 36 30       	LD (HL), NumberFont3L
+0444   C1E7 23          	INC HL
+0445   C1E8 36 48       	LD (HL), NumberFont0L
+0446   C1EA 23          	INC HL
+0447   C1EB 36 48       	LD (HL), NumberFont0L
+0448   C1ED C9          	RET
+0449   C1EE             
+0450   C1EE             ; TimerDec
+0451   C1EE             ; Decrement the timer and draw the time on the screen
+0452   C1EE             TimerDec:
+0453   C1EE 21 5A C5    	LD HL, Timer+2
+0454   C1F1 11 0A 40    	LD DE, 16384+10
+0455   C1F4             
+0456   C1F4 CD 5B C2    	CALL TimeDecDigit
+0457   C1F7 F5          	PUSH AF
+0458   C1F8 CD 2E C2    	CALL DrawDigit
+0459   C1FB F1          	POP AF
+0460   C1FC D8          	RET C
+0461   C1FD             	
+0462   C1FD 1D          	DEC E
+0463   C1FE 2B          	DEC HL
+0464   C1FF             	
+0465   C1FF CD 5B C2    	CALL TimeDecDigit
+0466   C202 F5          	PUSH AF
+0467   C203 CD 2E C2    	CALL DrawDigit
+0468   C206 F1          	POP AF
+0469   C207 D8          	RET C
+0470   C208             	
+0471   C208 1D          	DEC E
+0472   C209 2B          	DEC HL
+0473   C20A             	
+0474   C20A CD 5B C2    	CALL TimeDecDigit
+0475   C20D F5          	PUSH AF
+0476   C20E CD 2E C2    	CALL DrawDigit
+0477   C211 F1          RRR:	POP AF
+0478   C212 F5          	PUSH AF
+0479   C213             	
+0480   C213             	; Hundreds column rolling:
+0481   C213             	; 3->2 = 31h->38h
+0482   C213             	; 2->1 = 39h->40h
+0483   C213             	; 1->0 = 41h->48h
+0484   C213             	;CP $38
+0485   C213             	;CALL Z, EnableFlashEyes
+0486   C213 FE 41       	CP $41
+0487   C215 CC 54 C1    	CALL Z, EnableFlashEyes
+0488   C218 CD 6C C1    	CALL WinkAnim
+0489   C21B CD 41 C2    	CALL BeepWarning
+0490   C21E F1          	POP AF
+0491   C21F D8          	RET C
+0492   C220             	
+0493   C220             	; QUIT TO BASIC
+0494   C220 E1          	POP HL
+0495   C221             	
+0496   C221             	; Final Wink
+0497   C221 CD C7 C1    	CALL FinalWink
+0498   C224             
+0499   C224             	; Stop Eyes Flashing	
+0500   C224 CD 4F C1    	CALL DisableFlashEyes
+0501   C227             
+0502   C227             	; Remove Cursor	
+0503   C227 CD 68 C2    	CALL PlotFace		; Remove cursor
+0504   C22A             	
+0505   C22A             	; Calculate Score
+0506   C22A CD 5E C0    	CALL CompareScreen3	; BC = Mismatch count
+0507   C22D             	
+0508   C22D C9          	RET
+0509   C22E             
+0510   C22E             
+0511   C22E             DrawDigit:
+0512   C22E 06 08       	LD B, 8
+0513   C230 7E          	LD A, (HL)
+0514   C231 E5          	PUSH HL
+0515   C232 26 C5       	LD H, NumberFontH
+0516   C234 6F          	LD L, A
+0517   C235 7E          _DD1:	LD A, (HL)
+0518   C236 12          	LD (DE), A
+0519   C237 14          	INC D
+0520   C238 2C          	INC L
+0521   C239 10 FA       	DJNZ _DD1
+0522   C23B 7A          	LD A, D
+0523   C23C D6 08       	SUB 8
+0524   C23E 57          	LD D, A
+0525   C23F E1          	POP HL
+0526   C240 C9          	RET
+0527   C241             
+0528   C241             BeepWarning:
+0529   C241 F5          	PUSH AF
+0530   C242 01 FF 00    	LD BC, 255
+0531   C245 3E 07       	LD A, 7
+0532   C247             _BWloop1:	
+0533   C247 41          	LD B, C
+0534   C248 D3 FE       	OUT (254), A
+0535   C24A 10 FE       	DJNZ $
+0536   C24C EE 12       	XOR 18
+0537   C24E D3 FE       	OUT (254), A
+0538   C250 10 FE       	DJNZ $
+0539   C252 EE 12       	XOR 18
+0540   C254             	
+0541   C254 0D          	DEC C
+0542   C255 79          	LD A, C
+0543   C256 B7          	OR A
+0544   C257 20 EE       	JR NZ, _BWloop1
+0545   C259             	
+0546   C259 F1          	POP AF
+0547   C25A C9          	RET
+0548   C25B             	
+0549   C25B             ; TimeDecDigit
+0550   C25B             ; Decrements the digit pointed to by HL
+0551   C25B             TimeDecDigit:
+0552   C25B 7E          	LD A, (HL)
+0553   C25C 3C          	INC A
+0554   C25D             	
+0555   C25D             	; Hit very end (2nd 9): Place back at top
+0556   C25D FE 50       	CP NumberFont9L
+0557   C25F 38 03       	JR C, _TDD1
+0558   C261 AF          	XOR A
+0559   C262 18 02       	JR _TDD2
+0560   C264 FE 49       _TDD1:	CP NumberFont0L+1	; Check
+0561   C266 77          _TDD2:	LD (HL), A
+0562   C267 C9          	RET	; Carry Not Set if need to do the NEXT digit!
+0563   C268             
+0564   C268             
+0565   C268             	
+0566   C268             
+0567   C268             	
+0568   C268             ; PlotFace
+0569   C268             ; Draws the original onto screen based on Mask and position
+0570   C268             PlotFace:
+0571   C268 F3          	DI					; We want to use IY
+0572   C269 FD E5       	PUSH IY
+0573   C26B             	
+0574   C26B DD 21 49 C4 	LD IX, SpriteMask
+0575   C26F 3A 3F C4    	LD A, (XPosition)	; XPos in pixels
+0576   C272 1F          	RRA
+0577   C273 1F          	RRA
+0578   C274 1F          	RRA
+0579   C275 E6 1F       	AND 31				; XPos in chars
+0580   C277 5F          	LD E, A
+0581   C278 3A 40 C4    	LD A, (YPosition)
+0582   C27B 57          	LD D, A
+0583   C27C CD 3A C3    	CALL CalcScreenHL
+0584   C27F             	
+0585   C27F 06 10       	LD B, 16			; 16 ROWS
+0586   C281 C5          _Plot1:	PUSH BC
+0587   C282             
+0588   C282             	
+0589   C282             	
+0590   C282             	; Load Mask into 3 registers	
+0591   C282 DD 56 00    	LD D, (IX)
+0592   C285 DD 23       	INC IX
+0593   C287 DD 5E 00    	LD E, (IX)
+0594   C28A DD 23       	INC IX
+0595   C28C 0E 00       	LD C, 0
+0596   C28E             	
+0597   C28E             	; Prepare Shift
+0598   C28E 3A 3F C4    	LD A, (XPosition)
+0599   C291 E6 07       	AND 7
+0600   C293 28 09       	JR Z, _PlotSkipRot
+0601   C295 47          	LD B, A
+0602   C296             	
+0603   C296             	; Shift
+0604   C296 CB 1A       _Plot2:	RR D
+0605   C298 CB 1B       	RR E
+0606   C29A CB 19       	RR C
+0607   C29C 10 F8       	DJNZ _Plot2
+0608   C29E             
+0609   C29E             	; Mask is now in correct position in registers D E C
+0610   C29E             _PlotSkipRot:	
+0611   C29E E5          	PUSH HL
+0612   C29F 7C          	LD A, H
+0613   C2A0 C6 40       	ADD A, 64			; 16384 --> 32768
+0614   C2A2 67          	LD H, A
+0615   C2A3 E5          	PUSH HL
+0616   C2A4 FD E1       	POP IY
+0617   C2A6 E1          	POP HL
+0618   C2A7             	
+0619   C2A7             	; HL is at SCREEN
+0620   C2A7             	; IY is at same position in back buffer
+0621   C2A7             	
+0622   C2A7 7A          	LD A, D
+0623   C2A8 2F          	CPL		; Inverse Mask
+0624   C2A9 A6          	AND (HL)
+0625   C2AA 77          	LD (HL), A
+0626   C2AB FD 7E 00    	LD A, (IY)
+0627   C2AE A2          	AND D
+0628   C2AF B6          	OR (HL)
+0629   C2B0 77          	LD (HL), A
+0630   C2B1 FD 23       	INC IY
+0631   C2B3 2C          	INC L
+0632   C2B4             	
+0633   C2B4 7B          	LD A, E
+0634   C2B5 2F          	CPL		; Inverse Mask
+0635   C2B6 A6          	AND (HL)
+0636   C2B7 77          	LD (HL), A
+0637   C2B8 FD 7E 00    	LD A, (IY)
+0638   C2BB A3          	AND E
+0639   C2BC B6          	OR (HL)
+0640   C2BD 77          	LD (HL), A
+0641   C2BE FD 23       	INC IY
+0642   C2C0 2C          	INC L
+0643   C2C1             	
+0644   C2C1 79          	LD A, C
+0645   C2C2 2F          	CPL		; Inverse Mask
+0646   C2C3 A6          	AND (HL)
+0647   C2C4 77          	LD (HL), A
+0648   C2C5 FD 7E 00    	LD A, (IY)
+0649   C2C8 A1          	AND C
+0650   C2C9 B6          	OR (HL)
+0651   C2CA 77          	LD (HL), A
+0652   C2CB             	;;INC IY
+0653   C2CB             	;;INC L
+0654   C2CB             	
+0655   C2CB 2D          	DEC L
+0656   C2CC 2D          	DEC L
+0657   C2CD 24          	STEPDOWN
+0657   C2CE 7C          
+0657   C2CF E6 07       
+0657   C2D1 20 0A       
+0657   C2D3 7D          
+0657   C2D4 C6 20       
+0657   C2D6 6F          
+0657   C2D7 38 04       
+0657   C2D9 7C          
+0657   C2DA D6 08       
+0657   C2DC 67          
+0658   C2DD             
+0659   C2DD C1          	POP BC
+0660   C2DE 10 A1       	DJNZ _Plot1
+0661   C2E0             
+0662   C2E0 FD E1       	POP IY
+0663   C2E2 FB          	EI
+0664   C2E3 C9          	RET
+0665   C2E4             
+0666   C2E4             	.MODULE Module2
+0667   C2E4             	
+0668   C2E4             ; PlotCursor
+0669   C2E4             ; Draws the original onto screen based on Mask and position
+0670   C2E4             PlotCursor:
+0671   C2E4 DD 21 69 C4 	LD IX, CursorSprite
+0672   C2E8 3A 3F C4    	LD A, (XPosition)	; XPos in pixels
+0673   C2EB 1F          	RRA
+0674   C2EC 1F          	RRA
+0675   C2ED 1F          	RRA
+0676   C2EE E6 1F       	AND 31				; XPos in chars
+0677   C2F0 5F          	LD E, A
+0678   C2F1 3A 40 C4    	LD A, (YPosition)
+0679   C2F4 57          	LD D, A
+0680   C2F5 CD 3A C3    	CALL CalcScreenHL
+0681   C2F8             	
+0682   C2F8 3E 00       	LD A, 
+0683   C2FA 06 10       	LD B, 16			; 16 ROWS
+0684   C2FC C5          _Plot1:	PUSH BC
+0685   C2FD             
+0686   C2FD             	
+0687   C2FD             	
+0688   C2FD             	; Load Mask into 3 registers	
+0689   C2FD DD 56 00    	LD D, (IX)
+0690   C300 DD 23       	INC IX
+0691   C302 DD 5E 00    	LD E, (IX)
+0692   C305 DD 23       	INC IX
+0693   C307 0E 00       	LD C, 0
+0694   C309             	
+0695   C309             	; Prepare Shift
+0696   C309 3A 3F C4    	LD A, (XPosition)
+0697   C30C E6 07       	AND 7
+0698   C30E 28 09       	JR Z, _PlotSkipRot
+0699   C310 47          	LD B, A
+0700   C311             	
+0701   C311             	; Shift
+0702   C311 CB 1A       _Plot2:	RR D
+0703   C313 CB 1B       	RR E
+0704   C315 CB 19       	RR C
+0705   C317 10 F8       	DJNZ _Plot2
+0706   C319             
+0707   C319             	; Mask is now in correct position in registers D E C
+0708   C319             _PlotSkipRot:	
+0709   C319             	
+0710   C319             	; HL is at SCREEN
+0711   C319             	
+0712   C319 7A          	LD A, D
+0713   C31A B6          	OR (HL)
+0714   C31B 77          	LD (HL), A
+0715   C31C 2C          	INC L
+0716   C31D             	
+0717   C31D 7B          	LD A, E
+0718   C31E B6          	OR (HL)
+0719   C31F 77          	LD (HL), A
+0720   C320 2C          	INC L
+0721   C321             	
+0722   C321 79          	LD A, C
+0723   C322 B6          	OR (HL)
+0724   C323 77          	LD (HL), A
+0725   C324             	;;INC L
+0726   C324             	
+0727   C324 2D          	DEC L
+0728   C325 2D          	DEC L
+0729   C326 24          	STEPDOWN
+0729   C327 7C          
+0729   C328 E6 07       
+0729   C32A 20 0A       
+0729   C32C 7D          
+0729   C32D C6 20       
+0729   C32F 6F          
+0729   C330 38 04       
+0729   C332 7C          
+0729   C333 D6 08       
+0729   C335 67          
+0730   C336             
+0731   C336 C1          	POP BC
+0732   C337 10 C3       	DJNZ _Plot1
+0733   C339             
+0734   C339 C9          	RET
+0735   C33A             
+0736   C33A             ; CalcScreenHL
+0737   C33A             ; Calculates position on screen for a given Xchr / Ypix coordinate
+0738   C33A             ; Input
+0739   C33A             ; D = Y (pixels; 0..191)	= 96
+0740   C33A             ; E = X (chars; 0..31)			= 24
+0741   C33A             ; Output:
+0742   C33A             ; HL contains screen address
+0743   C33A             ; Note: BC and DE are untouched
+0744   C33A             CalcScreenHL:
+0745   C33A             
+0746   C33A             	; Calculate Screen Address to send sprite
+0747   C33A 7A          	LD A,D		; =Y
+0748   C33B E6 07       	AND 7
+0749   C33D 67          	LD H,A
+0750   C33E 7A          	LD A,D
+0751   C33F E6 38       	AND 56
+0752   C341 07          	RLCA
+0753   C342 07          	RLCA
+0754   C343 B3          	OR E		; =X
+0755   C344 6F          	LD L,A
+0756   C345 7A          	LD A,D		; =Y
+0757   C346 E6 C0       	AND 192
+0758   C348 0F          	RRCA
+0759   C349 0F          	RRCA
+0760   C34A 0F          	RRCA
+0761   C34B C6 40       	ADD A,64
+0762   C34D B4          	OR H
+0763   C34E 67          	LD H,A
+0764   C34F C9          	RET
+0765   C350             	
+0766   C350             
+0767   C350             
+0768   C350             
+0769   C350             
+0770   C350             ; PLOT
+0771   C350             ; B = Y Position (Pixels)
+0772   C350             ; C = X Position (Pixels)
+0773   C350             ; Returns:
+0774   C350             ; HL address 
+0775   C350             ; A containing bit position
+0776   C350             Plot:
+0777   C350 C5          	PUSH BC
+0778   C351 79          	LD A,C
+0779   C352 E6 07       	AND 7
+0780   C354 3C          	INC A
+0781   C355 5F          	LD E,A
+0782   C356 CB 39       	SRL C
+0783   C358 CB 39       	SRL C
+0784   C35A CB 39       	SRL C
+0785   C35C 78          	LD A,B
+0786   C35D E6 38       	AND 56
+0787   C35F CB 27       	SLA A
+0788   C361 CB 27       	SLA A
+0789   C363 B1          	OR C
+0790   C364 4F          	LD C,A
+0791   C365 78          	LD A,B
+0792   C366 E6 07       	AND 7
+0793   C368 57          	LD D,A
+0794   C369 78          	LD A,B
+0795   C36A E6 C0       	AND 192
+0796   C36C CB 3F       	SRL A
+0797   C36E CB 3F       	SRL A
+0798   C370 CB 3F       	SRL A
+0799   C372 82          	ADD A,D
+0800   C373 C6 40       	ADD A,64
+0801   C375 47          	LD B,A
+0802   C376 C5          	PUSH BC
+0803   C377 E1          	POP HL
+0804   C378 43          	LD B,E
+0805   C379 3E 80       	LD A,128
+0806   C37B 18 02       	JR _PlotSkip
+0807   C37D CB 3F       _PlotRepeat: 	SRL A
+0808   C37F 10 FC       _PlotSkip:	DJNZ _PlotRepeat
+0809   C381 C1          	POP BC
+0810   C382 C9          	RET
+0811   C383             
+0812   C383             
+0813   C383             InitBeard:	; Remove all whiskers from last game
+0814   C383 21 5B C5    	LD HL, BeardArray
+0815   C386 11 5C C5    	LD DE, BeardArray+1
+0816   C389 36 00       	LD (HL), 0
+0817   C38B 01 FF 07    	LD BC, (MaxWhiskers * BeardItemSize)-1
+0818   C38E ED B0       	LDIR
+0819   C390 C9          	RET
+0820   C391             	
+0821   C391             
+0822   C391             
+0823   C391             ProcessBeard:
+0824   C391 DD 21 5B C5 	LD IX, BeardArray
+0825   C395 3A 60 EA    	LD A, (WhiskersAddr)
+0826   C398 B7          	OR A	; Zero?
+0827   C399 C8          	RET Z
+0828   C39A             	
+0829   C39A 47          	LD B, A
+0830   C39B C5          _PB1:	PUSH BC
+0831   C39C             
+0832   C39C                     ; BeardArray:
+0833   C39C                     ; IX+0  = Xpos Sub Value	(LO)
+0834   C39C                     ; IX+1  = Xpos	    Value	(HI)	; If this is less than (say) 128, then new whisker
+0835   C39C             
+0836   C39C                     ; IX+2  = Ypos Sub Value	(LO)
+0837   C39C                     ; IX+3  = Ypos	    Value	(HI)
+0838   C39C             
+0839   C39C                     ; IX+4  = Xdir Sub Value	(LO)
+0840   C39C                     ; IX+5  = Xdir     Value	(HI)	= 0 (Right)
+0841   C39C             
+0842   C39C                     ; IX+6  = Ydir Sub Value	(LO)
+0843   C39C                     ; IX+7  = Ydir     Value	(HI)	= 0 (Down) or 255 (Up)
+0844   C39C             
+0845   C39C DD 7E 01    	LD A, (IX+1)
+0846   C39F FE 80       	CP 128
+0847   C3A1 38 1A       	JR C, _PBNewWhisker
+0848   C3A3 DD 7E 03    	LD A, (IX+3)
+0849   C3A6 FE BE       	CP 190
+0850   C3A8 30 13       	JR NC, _PBNewWhisker
+0851   C3AA             
+0852   C3AA             	; Test for an early NewWhisker
+0853   C3AA 26 FB       	LD H, RandomTableH
+0854   C3AC 3A 47 C4    	LD A, (RandomTableSeed)
+0855   C3AF 6F          	LD L, A
+0856   C3B0 7E          	LD A, (HL)	
+0857   C3B1 47          	LD B, A
+0858   C3B2 2C          	INC L
+0859   C3B3 7D          	LD A, L
+0860   C3B4 32 47 C4    	LD (RandomTableSeed), A
+0861   C3B7 E6 95       	AND 10010101b
+0862   C3B9 28 02       	JR Z, _PBNewWhisker
+0863   C3BB             	
+0864   C3BB             	
+0865   C3BB             	
+0866   C3BB 18 3D       	JR _PBPlot
+0867   C3BD             
+0868   C3BD             _PBNewWhisker:
+0869   C3BD             	; a) Read a new XY value from the RandomXY table
+0870   C3BD 26 FC       	LD H, RandomXYH
+0871   C3BF 3A 48 C4    	LD A, (RandomXYSeed)
+0872   C3C2 6F          	LD L, A
+0873   C3C3 7E          	LD A, (HL)	; Xpix
+0874   C3C4 DD 77 01    	LD (IX+1), A
+0875   C3C7 2C          	INC L
+0876   C3C8 7E          	LD A, (HL)	; Ypix
+0877   C3C9 DD 77 03    	LD (IX+3), A
+0878   C3CC 2C          	INC L
+0879   C3CD 7D          	LD A, L
+0880   C3CE 32 48 C4    	LD (RandomXYSeed), A
+0881   C3D1             	
+0882   C3D1 AF          	XOR A
+0883   C3D2 DD 77 00    	LD (IX+0), A	; Xsubpix
+0884   C3D5 DD 77 02    	LD (IX+2), A	; Ysubpix
+0885   C3D8 DD 77 05    	LD (IX+5), A	; Xdir     Value
+0886   C3DB DD 77 07    	LD (IX+7), A	; Ydir     Value
+0887   C3DE             	
+0888   C3DE             	
+0889   C3DE             	
+0890   C3DE             	; Generate a sub dx and dy value
+0891   C3DE 26 FB       	LD H, RandomTableH
+0892   C3E0 3A 47 C4    	LD A, (RandomTableSeed)
+0893   C3E3 6F          	LD L, A
+0894   C3E4 7E          	LD A, (HL)	
+0895   C3E5 DD 77 04    	LD (IX+4), A
+0896   C3E8 2C          	INC L
+0897   C3E9 7E          	LD A, (HL)	
+0898   C3EA DD 77 06    	LD (IX+6), A
+0899   C3ED 2C          	INC L
+0900   C3EE 7E          	LD A, (HL)
+0901   C3EF 1F          	RRA
+0902   C3F0 38 03       	JR C, _PBA
+0903   C3F2 DD 35 07    	DEC (IX+7)		; Make "255" (up)
+0904   C3F5             _PBA:
+0905   C3F5 2C          	INC L
+0906   C3F6 7D          	LD A, L
+0907   C3F7 32 47 C4    	LD (RandomTableSeed), A
+0908   C3FA             	
+0909   C3FA             	
+0910   C3FA             	
+0911   C3FA             _PBPlot:	
+0912   C3FA             	; Plot
+0913   C3FA DD 4E 01    	LD C, (IX+1)
+0914   C3FD DD 46 03    	LD B, (IX+3)
+0915   C400 78          	LD A, B
+0916   C401 FE BF       	CP 191	; Extra protection
+0917   C403 38 03       	JR C, _SafePlot
+0918   C405 01 00 00    	LD BC, 0	; Y > 192!!!
+0919   C408 CD 50 C3    _SafePlot:	CALL Plot
+0920   C40B B6          	OR (HL)
+0921   C40C 77          	LD (HL), A
+0922   C40D             	
+0923   C40D             	; Update Position (X=X+dx)
+0924   C40D DD 6E 00    	LD L, (IX+0)
+0925   C410 DD 66 01    	LD H, (IX+1)
+0926   C413 DD 5E 04    	LD E, (IX+4)
+0927   C416 DD 56 05    	LD D, (IX+5)
+0928   C419 19          	ADD HL, DE
+0929   C41A DD 75 00    	LD (IX+0), L
+0930   C41D DD 74 01    	LD (IX+1), H
+0931   C420             	
+0932   C420             	; Update Position (Y=Y+dy)
+0933   C420 DD 6E 02    	LD L, (IX+2)
+0934   C423 DD 66 03    	LD H, (IX+3)
+0935   C426 DD 5E 06    	LD E, (IX+6)
+0936   C429 DD 56 07    	LD D, (IX+7)
+0937   C42C 19          	ADD HL, DE
+0938   C42D DD 75 02    	LD (IX+2), L
+0939   C430 DD 74 03    	LD (IX+3), H
+0940   C433             	
+0941   C433             	; Move to next item
+0942   C433 11 08 00    	LD DE, 8
+0943   C436 DD 19       	ADD IX, DE
+0944   C438             	
+0945   C438 C1          	POP BC
+0946   C439 10 01       	DJNZ _PB1_
+0947   C43B C9          	RET
+0948   C43C             
+0949   C43C C3 9B C3    _PB1_	JP _PB1
+0950   C43F             
+0951   C43F             
+0952   C43F             
+0953   C43F             
+0954   C43F             	
+0955   C43F C7          XPosition: 	.byte $C7 ; 192
+0956   C440 60          YPosition:	.byte 96
+0957   C441 C0          XLastPos: 	.byte 192
+0958   C442 60          YLastPos:	.byte 96
+0959   C443             
+0960   C443 00 00       LastCompValue:	.word 0
+0961   C445 00          CompOpt:	.byte 0
+0962   C446 0A          CompOptMax:	.byte 10
+0963   C447             
+0964   C447             
+0965   C447 00          RandomTableSeed: 	.byte 0
+0966   C448 00          RandomXYSeed:	 	.byte 0
+0967   C449             
+0968   C449             
+0969   C449             
+0970   C449             SpriteMask:
+0971   C449 03C00FF01FF8	.byte 3, 192, 15, 240, 31, 248, 63, 252, 127, 254, 127, 254, 255, 255, 255, 255 
+0971   C44F 3FFC7FFE7FFEFFFFFFFF
+0972   C459 FFFFFFFF7FFE	.byte 255, 255, 255, 255, 127, 254, 127, 254, 63, 252, 31, 248, 15, 240, 3, 192
+0972   C45F 7FFE3FFC1FF80FF003C0
+0973   C469             	
+0974   C469             CursorSprite:
+0975   C469 0000000007E0	.byte 0, 0, 0, 0, 7, 224, 15, 240, 28, 56, 56, 28, 48, 12, 48, 12
+0975   C46F 0FF01C38381C300C300C
+0976   C479 300C300C381C	.byte 48, 12, 48, 12, 56, 28, 28, 56, 15, 240, 7, 224, 0, 0, 0, 0
+0976   C47F 1C380FF007E000000000
+0977   C489             	
+0978   C489             
+0979   C489             
+0980   C489             
+0981   C489             
+0982   C489             			; NUM    : 1    2   4  8  16
+0983   C489             			; BIT	: 0    1   2  3  4 	B  C
+0984   C489             			; -------; ----------------	-----
+0985   C489             KeyPortCSV	.equ 65278	; cap  Z   X  C  V	FE FE
+0986   C489             KeyPortAG	.equ 65022	; A    S   D  F  G  	FD FE
+0987   C489             KeyPortQT	.equ 64510	; Q    W   E  R  T	FB FE
+0988   C489             KeyPort15	.equ 63486	; 1    2   3  4  5	F7 FE
+0989   C489             KeyPort06	.equ 61438	; 0    9   8  7  6	EF FE
+0990   C489             KeyPortPY	.equ 57342	; P    O   I  U  Y	DF FE
+0991   C489             KeyPortENTH	.equ 49150	; ent  L   K  J  H	BF FE
+0992   C489             KeyPortSPB	.equ 32766	; spc  sym M  N  B	7F FE
+0993   C489             
+0994   C489             
+0995   C489             
+0996   C489             	
+0997   C489             	; Align to the next 256 byte boundary
+0998   C500                             .org (($ + 0FFH) & 0FF00H)
+0999   C500             	
+1000   C500             
+1001   C500             
+1002   C500             ; Characters 9 8 7 6 5 4 3 2 1 0 9
+1003   C500             ; are described in a series of 8 bytes
+1004   C500             ; 256 aligned required
+1005   C500             NumberFontH:	.equ $/256
+1006   C500             NumberFont0L:	.equ $48
+1007   C500             NumberFont3L:	.equ $30
+1008   C500             NumberFont5L:	.equ $20
+1009   C500             NumberFont9L:	.equ $50
+1010   C500             
+1011   C500 003C42423E02	.byte $00, $3C, $42, $42, $3E, $02, $3C, $00	; 9
+1011   C506 3C00
+1012   C508 003C423C4242	.byte $00, $3C, $42, $3C, $42, $42, $3C, $00	; 8
+1012   C50E 3C00
+1013   C510 007E02040810	.byte $00, $7E, $02, $04, $08, $10, $10, $00	; 7
+1013   C516 1000
+1014   C518 003C407C4242	.byte $00, $3C, $40, $7C, $42, $42, $3C, $00	; 6
+1014   C51E 3C00
+1015   C520 007E407C0242	.byte $00, $7E, $40, $7C, $02, $42, $3C, $00	; 5
+1015   C526 3C00
+1016   C528 00081828487E	.byte $00, $08, $18, $28, $48, $7E, $08, $00	; 4
+1016   C52E 0800
+1017   C530 003C420C0242	.byte $00, $3C, $42, $0C, $02, $42, $3C, $00	; 3
+1017   C536 3C00
+1018   C538 003C42023C40	.byte $00, $3C, $42, $02, $3C, $40, $7E, $00	; 2
+1018   C53E 7E00
+1019   C540 001828080808	.byte $00, $18, $28, $08, $08, $08, $3E, $00	; 1
+1019   C546 3E00
+1020   C548 003C464A5262	.byte $00, $3C, $46, $4A, $52, $62, $3C, $00	; 0
+1020   C54E 3C00
+1021   C550 003C42423E02	.byte $00, $3C, $42, $42, $3E, $02, $3C, $00	; 9
+1021   C556 3C00
+1022   C558             
+1023   C558 48 48 20    Timer:	.byte NumberFont0L, NumberFont0L, NumberFont5L
+1024   C55B             
+1025   C55B             
+1026   C55B             
+1027   C55B             
+1028   C55B             
+1029   C55B             
+1030   C55B             
+1031   C55B             RandomTable:	.equ $FB00		; $FB00 to $FBFF: 256 bytes of random 00..FF values
+1032   C55B             RandomXY:	.equ $FC00		; $FC00 to $FCFF: 256 bytes of alternate {X, Y} values
+1033   C55B             
+1034   C55B             RandomTableH:	.equ RandomTable/256
+1035   C55B             RandomXYH:	.equ RandomXY/256
+1036   C55B             
+1037   C55B             ; BeardArray:
+1038   C55B             ; IX+0  = Xpos Sub Value	(LO)
+1039   C55B             ; IX+1  = Xpos	    Value	(HI)	; If this is less than (say) 128, then new whisker
+1040   C55B             
+1041   C55B             ; IX+2  = Ypos Sub Value	(LO)
+1042   C55B             ; IX+3  = Ypos	    Value	(HI)
+1043   C55B             
+1044   C55B             ; IX+4  = Xdir Sub Value	(LO)
+1045   C55B             ; IX+5  = Xdir     Value	(HI)
+1046   C55B             
+1047   C55B             ; IX+6  = Ydir Sub Value	(LO)
+1048   C55B             ; IX+7  = Ydir     Value	(HI)
+1049   C55B             
+1050   C55B             
+1051   C55B             MaxWhiskers	.equ 256
+1052   C55B             WhiskersAddr	.equ 60000
+1053   C55B             BeardItemSize	.equ 8
+1054   C55B             
+1055   C55B             BeardArray:	.block MaxWhiskers * BeardItemSize
+1056   CD5B             
+1057   CD5B             
+1058   CD5B             	.end
+1059   CD5B             	
+1060   CD5B             	
+
+
+
+Type Key: N=NULL_SEG C=CODE_SEG B=BIT_SEG X=EXTD_SEG D=DATA_SEG
+          L=Local
+          E=Export
+
+Value    Type   Label
+-----    ----   ------------------------------
+8000     N      BitmapAddr                      
+C241     N      BeepWarning                     
+0008     N      BeardItemSize                   
+C55B     N      BeardArray                      
+C041     N      CompareScreen3Opt               
+C05E     N      CompareScreen3                  
+C33A     N      CalcScreenHL                    
+C445     N      CompOpt                         
+C446     N      CompOptMax                      
+C469     N      CursorSprite                    
+C14F     N      DisableFlashEyes                
+C22E     N      DrawDigit                       
+C154     N      EnableFlashEyes                 
+C027     N      FlashInv                        
+C029     N      FlashInv0                       
+C03D     N      FlashNorm                       
+C1C7     N      FinalWink                       
+C383     N      InitBeard                       
+C0B8     N      KeyboardScan                    
+FEFE     N      KeyPortCSV                      
+FDFE     N      KeyPortAG                       
+FBFE     N      KeyPortQT                       
+F7FE     N      KeyPort15                       
+EFFE     N      KeyPort06                       
+DFFE     N      KeyPortPY                       
+BFFE     N      KeyPortENTH                     
+7FFE     N      KeyPortSPB                      
+C01B     N      LoadScreen                      
+C443     N      LastCompValue                   
+C009     N      MainLoop1                       
+C2FC     NL     Module2._Plot1                  
+C311     NL     Module2._Plot2                  
+C319     NL     Module2._PlotSkipRot            
+C37D     NL     Module2._PlotRepeat             
+C37F     NL     Module2._PlotSkip               
+C39B     NL     Module2._PB1                    
+C3BD     NL     Module2._PBNewWhisker           
+C3F5     NL     Module2._PBA                    
+C3FA     NL     Module2._PBPlot                 
+C408     NL     Module2._SafePlot               
+C43C     NL     Module2._PB1_                   
+0100     N      MaxWhiskers                     
+00C5     N      NumberFontH                     
+0048     N      NumberFont0L                    
+0030     N      NumberFont3L                    
+0020     N      NumberFont5L                    
+0050     N      NumberFont9L                    
+C268     N      PlotFace                        
+C2E4     N      PlotCursor                      
+C350     N      Plot                            
+C391     N      ProcessBeard                    
+C211     N      RRR                             
+C447     N      RandomTableSeed                 
+C448     N      RandomXYSeed                    
+FB00     N      RandomTable                     
+FC00     N      RandomXY                        
+00FB     N      RandomTableH                    
+00FC     N      RandomXYH                       
+C449     N      SpriteMask                      
+C1E2     N      TimerReset                      
+C1EE     N      TimerDec                        
+C25B     N      TimeDecDigit                    
+C558     N      Timer                           
+C16C     N      WinkAnim                        
+C17D     N      WinkAnimUp                      
+C182     N      WinkUp                          
+C1A4     N      WinkDown                        
+EA60     N      WhiskersAddr                    
+C43F     N      XPosition                       
+C441     N      XLastPos                        
+C440     N      YPosition                       
+C442     N      YLastPos                        
+C050     NL     noname._CS1                     
+C06A     NL     noname._CSloop                  
+C070     NL     noname._CSskip0                 
+C078     NL     noname._CSskip1                 
+C080     NL     noname._CSskip2                 
+C088     NL     noname._CSskip3                 
+C090     NL     noname._CSskip4                 
+C098     NL     noname._CSskip5                 
+C0A0     NL     noname._CSskip6                 
+C0A8     NL     noname._CSskip7                 
+C0CE     NL     noname._Up1                     
+C0DC     NL     noname._Down1                   
+C0EA     NL     noname._Right1                  
+C0F8     NL     noname._Left1                   
+C106     NL     noname._Up2                     
+C11A     NL     noname._Down2                   
+C128     NL     noname._Right2                  
+C13B     NL     noname._Left2                   
+C14E     NL     noname._End                     
+C157     NL     noname._EFE1                    
+C16A     NL     noname._WinkExit                
+C187     NL     noname._WinkUpLoop              
+C1A9     NL     noname._WinkDnLoop              
+C1C9     NL     noname._FW0                     
+C1CF     NL     noname._FW1                     
+C1D8     NL     noname._FW2                     
+C235     NL     noname._DD1                     
+C247     NL     noname._BWloop1                 
+C264     NL     noname._TDD1                    
+C266     NL     noname._TDD2                    
+C281     NL     noname._Plot1                   
+C296     NL     noname._Plot2                   
+C29E     NL     noname._PlotSkipRot             
+
+tasm: Number of errors = 0

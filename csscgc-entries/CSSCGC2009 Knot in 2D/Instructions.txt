@@ -1,0 +1,51 @@
+
+
+======================================================================================
+
+                _  ___   _  ___ _____   ___ _   _   ____  ____  
+               | |/ / \ | |/ _ \_   _| |_ _| \ | | |___ \|  _ \ 
+               | ' /|  \| | | | || |    | ||  \| |   __) | | | |
+               | . \| |\  | |_| || |    | || |\  |  / __/| |_| |
+               |_|\_\_| \_|\___/ |_|   |___|_| \_| |_____|____/ 
+                                                                
+                            (machine code edition)
+
+                           by Chris "BloodBaz" Walsh
+
+======================================================================================
+
+
+From the people who brought you "Shave Ricks Beard" (2007 entry), "Knot in 2D" (basic 
+version) (23rd position in 2008) and "Advanced PURPLE Loading Simulator"  (121st 
+position in 2008), BloodBaz brings you KNOT IN 2D (MACHINE CODE EDITION).
+
+Manouver your.... snake, through a full colour larger-than-the-screen sized garden avoiding
+your own body and other garden features (in extra levels).
+
+
+FEATURES
+========
+* Full Colour Graphics
+* Fast Full Screen Scrolling
+* Tufts of grass
+* Flowers
+* Trees
+* Levels
+* Score
+* Brilliant Loading Screen (all of 25 minutes in Basin - thanks Dunny!)
+* Machine Code
+* Fantastic sound effects
+* Time limit
+* Damange
+* Blistering fast scrolling
+
+
+KEYS
+====
+Q = LEFT
+A = RIGHT
+O = UP
+P = DOWN
+
+
+(to rerun the game, type RANDOMIZE USR 32768)

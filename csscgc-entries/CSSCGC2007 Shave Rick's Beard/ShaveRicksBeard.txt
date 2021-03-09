@@ -1,0 +1,30 @@
+  =====================================
+  S H A V E    R I C K ' S    B E A R D
+  =====================================
+
+INSTRUCTIONS
+============
+
+Rick is a bloke at work.  
+He needs a shave.  
+Help him shave and everyone will be happy.  
+The more you shave the better.
+
+
+Features:
+=========
+* Thin TV (Patent Pending)
+* Shavers
+* Beards
+* Rick
+* Amazing Sound Effects
+* Full Screen Motion Animation
+* Absolutely Fantastic Gameplay
+
+Note: Ambiguity in the name of this software title is purely intentional.
+
+
+
+Written by Chris Walsh (BloodBaz)
+Submission for the comp.sys.sinclair Crap Games Competition 2007.
+Email bugs to chris.walsh@real-sense.com

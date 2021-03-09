@@ -1,0 +1,2854 @@
+0001   0000             ; 
+0002   0000             ; Knot in 2D (Machine Code edition)
+0003   0000             ; ---------------------------------
+0004   0000             ; This code is developed for the CSSCGC 2008
+0005   0000             ;
+0006   0000             ; Version 1.0	7th January 2009
+0007   0000             ; Initial Implementation
+0008   0000             ;
+0009   0000             ;
+0010   0000             #DEFINE	STEPDOWN INC H\ LD A,H\ AND 7\       JR NZ,$+12\ LD A,L\ ADD A,32\ LD L,A\ JR C,$+6\ LD A,H\ SUB   8\ LD H,A
+0011   0000             #DEFINE	STEPUP   DEC H\ LD A,H\ AND 7\ CP 7\ JR NZ,$+12\ LD A,L\ SUB   32\ LD L,A\ JR C,$+6\ LD A,H\ ADD A,8\ LD H,A
+0012   0000             
+0013   0000             
+0014   0000             	.CSEG
+0015   0000             
+0016   8000             	.org 8000h	; 32768
+0017   8000             
+0018   8000             
+0019   8000             
+0020   8000             	.MODULE MainApp
+0021   8000             
+0022   8000             Start:
+0023   8000             
+0024   8000             	; Display the welcome message and wait for a key to be pressed
+0025   8000             	; to start the game
+0026   8000 CD D0 80    	CALL DisplayWelcome
+0027   8003             
+0028   8003             	; Initialise game	
+0029   8003 CD 5D 81    	CALL InitGame
+0030   8006             	
+0031   8006             	; Play a whole game
+0032   8006 CD 0C 80    	CALL RunGame
+0033   8009             	
+0034   8009             ;	CALL GameOver
+0035   8009             	
+0036   8009 C3 00 80    	JP Start
+0037   800C             
+0038   800C             
+0039   800C             
+0040   800C             
+0041   800C             ; RunGame
+0042   800C             ; Runs a single instance of the whole game
+0043   800C             RunGame:
+0044   800C             
+0045   800C             
+0046   800C             LevelLoop:
+0047   800C             
+0048   800C             	; Display Level Message
+0049   800C CD E9 80    	CALL DisplayLevel
+0050   800F             	
+0051   800F             	; Initialise Sheet
+0052   800F CD B9 81    	CALL InitSheet
+0053   8012             
+0054   8012             	; Play Level
+0055   8012 CD 1A 80    	CALL PlayLevel
+0056   8015             	
+0057   8015             	; Display Level Result
+0058   8015 CD FA 81    	CALL DisplayLevelResult
+0059   8018             	
+0060   8018 18 F2       	JR LevelLoop
+0061   801A             
+0062   801A             
+0063   801A             	
+0064   801A             PlayLevel: 
+0065   801A             
+0066   801A             	; Draw Head
+0067   801A CD A9 85    	CALL DrawSnakeHead
+0068   801D             	
+0069   801D             	; Render Room
+0070   801D CD 07 85    	CALL RenderRoom
+0071   8020             
+0072   8020             	; Increment and Draw Score
+0073   8020 CD F9 86    	CALL UpdateScore
+0074   8023             	
+0075   8023             	; Decrement and Draw Time
+0076   8023 CD 4D 87    	CALL UpdateTimer
+0077   8026             
+0078   8026             	; Level Complete? (Time)
+0079   8026 C8          	RET Z
+0080   8027             
+0081   8027             	; Wait
+0082   8027 76          	HALT
+0083   8028 76          	HALT
+0084   8029             	
+0085   8029             	; Read Keys
+0086   8029 CD FF 87    	CALL ScanGameKeys
+0087   802C             
+0088   802C             	
+0089   802C             	; Change Direction (if required) and Move Hero
+0090   802C             	; Note: EXIT may occur inside this call
+0091   802C CD CF 85    	CALL UpdatePosition
+0092   802F             	
+0093   802F             	; Test Damage
+0094   802F CD 5D 86    	CALL TestDamage
+0095   8032             	
+0096   8032 18 E6       	JR PlayLevel
+0097   8034             
+0098   8034             
+0099   8034             
+0100   8034             
+0101   8034             
+0102   8034             
+0103   8034             	.MODULE MainFunctions
+0104   8034             
+0105   8034             
+0106   8034             
+0107   8034             ; CLS
+0108   8034             ; Clears the screen.
+0109   8034             ; Sets the screen attributes to colour stored in A
+0110   8034             ; Sets border to black
+0111   8034             CLS:
+0112   8034 CD 4F 80    	CALL CLS_Pixels
+0113   8037             
+0114   8037 77          	LD (HL),A
+0115   8038 01 FF 02    	LD BC,767
+0116   803B ED B0       	LDIR
+0117   803D             
+0118   803D AF          	XOR A
+0119   803E D3 FE       	OUT (254),A
+0120   8040 C9          	RET
+0121   8041             
+0122   8041             ; CLS_GAME
+0123   8041             ; Clears the attributes of the screen only - third line downwards
+0124   8041             ; Sets the screen attributes to colour stored in A
+0125   8041             CLS_GAME:
+0126   8041 21 40 58    	LD HL,22528+64
+0127   8044 11 41 58    	LD DE,22528+65
+0128   8047 01 BF 02    	LD BC,767-64
+0129   804A 36 07       	LD (HL), 7
+0130   804C ED B0       	LDIR	
+0131   804E C9          	RET
+0132   804F             
+0133   804F             
+0134   804F             ; CLS_Pixels
+0135   804F             ; Clears the screen area (not attributes) from line 16 downwards
+0136   804F             CLS_Pixels:
+0137   804F 21 00 40    	LD HL,16384
+0138   8052 11 01 40    	LD DE,16385
+0139   8055 01 00 18    	LD BC,6144
+0140   8058 36 00       	LD (HL),0
+0141   805A ED B0       	LDIR
+0142   805C C9          	RET
+0143   805D             	
+0144   805D             ; CLS_PixelsFrom16
+0145   805D             ; Clears the screen area (not attributes) from line 16 downwards
+0146   805D             CLS_PixelsFrom16:
+0147   805D 21 40 40    	LD HL,16384+64
+0148   8060 0E B0       	LD C, 192-16	; Pixel Rows to Clear
+0149   8062 16 20       	LD D, 32		; Useful number (bytes per line)
+0150   8064             CLS1:
+0151   8064 AF          	XOR A
+0152   8065 42          	LD B, D
+0153   8066 E5          	PUSH HL
+0154   8067             CLS2:
+0155   8067 77          	LD (HL), A
+0156   8068 2C          	INC L
+0157   8069 10 FC       	DJNZ CLS2
+0158   806B E1          	POP HL
+0159   806C 24          	STEPDOWN
+0159   806D 7C          
+0159   806E E6 07       
+0159   8070 20 0A       
+0159   8072 7D          
+0159   8073 C6 20       
+0159   8075 6F          
+0159   8076 38 04       
+0159   8078 7C          
+0159   8079 D6 08       
+0159   807B 67          
+0160   807C 0D          	DEC C
+0161   807D 20 E5       	JR NZ, CLS1
+0162   807F C9          	RET
+0163   8080             
+0164   8080             InitRandom:
+0165   8080 ED 5F       	LD A, R	
+0166   8082 26 00       	LD H, 0
+0167   8084 6F          	LD L, A
+0168   8085 22 2E 89    	LD (Seed), HL
+0169   8088 C9          	RET
+0170   8089             	
+0171   8089             ; Pseudo-random number generator.
+0172   8089             ; Steps a pointer through the ROM (held in seed), returning the contents
+0173   8089             ; of the byte at that location.
+0174   8089             Random:	
+0175   8089 E5          	PUSH HL
+0176   808A 2A 2E 89    	LD HL, (Seed)	; Pointer
+0177   808D 7C          	LD A, H
+0178   808E FE 3A       	CP 58		; Approaching end of "random" area?
+0179   8090 30 09       	JR NC,_Rand0	; Yes - reset pointer.
+0180   8092 ED 5F       	LD A, R
+0181   8094 AE          	XOR (HL)	; Get "random" number from location.
+0182   8095 23          	INC HL		; Increment pointer.
+0183   8096 22 2E 89    	LD (Seed),HL
+0184   8099 E1          	POP HL
+0185   809A C9          	RET
+0186   809B 21 00 00    _Rand0:	LD HL,0		; Reset pointer.
+0187   809E 22 2E 89    	LD (Seed),HL
+0188   80A1 E1          	POP HL
+0189   80A2 C9          	RET
+0190   80A3             
+0191   80A3             
+0192   80A3             
+0193   80A3             ; TestKeyPress
+0194   80A3             ; Tests to see if user is pressing a key
+0195   80A3             ; Returns:
+0196   80A3             ;	If no key is pressed, then returns with the Z flag set
+0197   80A3             ;	If a key is pressed,  then returns with the Z flag reset
+0198   80A3             TestKeyPress:
+0199   80A3 01 FE 00    	LD BC, 254
+0200   80A6 ED 78       	IN A, (C)
+0201   80A8 E6 1F       	AND 31
+0202   80AA EE 1F       	XOR 31
+0203   80AC C9          	RET
+0204   80AD             
+0205   80AD             ; SafeWaitKey
+0206   80AD             ; Waits for the user to release any currently pressed key
+0207   80AD             ; before waiting for a key press
+0208   80AD             SafeWaitKey:
+0209   80AD CD C2 80    	CALL WaitNoKeyPress
+0210   80B0 CD B4 80    	CALL WaitKeyPress
+0211   80B3 C9          	RET
+0212   80B4             	
+0213   80B4             ; WaitKeyPress	
+0214   80B4             ; Waits patiently for a key press
+0215   80B4             WaitKeyPress:
+0216   80B4 01 FE 00    	LD BC, 254
+0217   80B7 ED 78       _WKPLp:	IN A, (C)
+0218   80B9 E6 1F       	AND 31
+0219   80BB EE 1F       	XOR 31
+0220   80BD C0          	RET NZ
+0221   80BE 76          	HALT
+0222   80BF 18 F6       	JR _WKPLp
+0223   80C1 C9          	RET
+0224   80C2             
+0225   80C2             ; WaitNoKeyPress	
+0226   80C2             ; Waits patiently for a key press
+0227   80C2             WaitNoKeyPress:
+0228   80C2 01 FE 00    	LD BC, 254
+0229   80C5 ED 78       _WNKPLp:IN A, (C)
+0230   80C7 E6 1F       	AND 31
+0231   80C9 EE 1F       	XOR 31
+0232   80CB C8          	RET Z
+0233   80CC 76          	HALT
+0234   80CD 18 F6       	JR _WNKPLp
+0235   80CF C9          	RET
+0236   80D0             
+0237   80D0             
+0238   80D0             ; DisplayWelcome
+0239   80D0             ; Display a welcome message
+0240   80D0             DisplayWelcome:
+0241   80D0             
+0242   80D0             	; Clear Screen
+0243   80D0 AF          	XOR A
+0244   80D1 CD 34 80    	CALL CLS
+0245   80D4             
+0246   80D4             	; We want a keypress to exit our scrolly
+0247   80D4 3E 01       	LD A, 1
+0248   80D6 32 5C 89    	LD (ScrollFlags), A
+0249   80D9             	
+0250   80D9             	; Display Welcome Message
+0251   80D9 DD 21 5E 89 	LD IX, WelcomeMsg
+0252   80DD CD 23 88    	CALL DisplayMessage
+0253   80E0             
+0254   80E0             	; We DON'T want a keypress to exit by default
+0255   80E0 21 5C 89    	LD HL, ScrollFlags
+0256   80E3 36 00       	LD (HL), 0
+0257   80E5             
+0258   80E5             	; Return if user pressed a key to exit early
+0259   80E5 C0          	RET NZ
+0260   80E6             
+0261   80E6             	; Wait for a key before starting game
+0262   80E6 C3 B4 80    	JP WaitKeyPress
+0263   80E9             
+0264   80E9             
+0265   80E9             
+0266   80E9             
+0267   80E9             
+0268   80E9             
+0269   80E9             	
+0270   80E9             ; DisplayLevel
+0271   80E9             ; Displays a message on the screen saying what level we are on
+0272   80E9             DisplayLevel:
+0273   80E9             
+0274   80E9             	; Clear Game Screen
+0275   80E9 CD 41 80    	CALL CLS_GAME
+0276   80EC             
+0277   80EC             	; Get Level Number
+0278   80EC 3A 1F 89    	LD A, (Level)
+0279   80EF             
+0280   80EF             	; Position in Message to insert Level Number
+0281   80EF 21 3A 8A    	LD HL, LevelXXMsg2
+0282   80F2             	
+0283   80F2 CD 4C 81    	CALL Write2BinDigitsIntoMsg
+0284   80F5             	
+0285   80F5             	
+0286   80F5 DD 21 34 8A 	LD IX, LevelXXMsg
+0287   80F9 CD 23 88    	CALL DisplayMessage
+0288   80FC C9          	RET
+0289   80FD             
+0290   80FD             
+0291   80FD             
+0292   80FD             
+0293   80FD             
+0294   80FD             ; Write2DDADigitsIntoMsg
+0295   80FD             ; Input:
+0296   80FD             ; 	A = Number to write (DDA) [0..99]
+0297   80FD             ;	HL = Points to word to write ascii characters
+0298   80FD             Write2DDADigitsIntoMsg:
+0299   80FD             	; Get High Nibble
+0300   80FD 47          	LD B, A	; Save
+0301   80FE 1F          	RRA
+0302   80FF 1F          	RRA
+0303   8100 1F          	RRA
+0304   8101 1F          	RRA
+0305   8102 E6 0F       	AND 15
+0306   8104             	
+0307   8104             	; Add '0' and locate character in Lookup Table
+0308   8104 C6 30       	ADD A, 48	
+0309   8106 77          	LD (HL), A
+0310   8107 23          	INC HL
+0311   8108             
+0312   8108 78          	LD A, B
+0313   8109 E6 0F       	AND 15
+0314   810B C6 30       	ADD A, 48
+0315   810D 77          	LD (HL), A
+0316   810E C9          	RET
+0317   810F             
+0318   810F             
+0319   810F             ; Write5BinDigitsIntoMsg
+0320   810F             ; Input:
+0321   810F             ; 	HL = Number to write (binary) [0..65535]
+0322   810F             ;	IX = Points to word to write ascii characters
+0323   810F             Write5BinDigitsIntoMsg:
+0324   810F             	
+0325   810F 3E 30       	LD A, '0'		; 10000 column
+0326   8111 01 10 27    	LD BC, 10000
+0327   8114 A7          	AND A
+0328   8115             
+0329   8115             W2BLoop1:
+0330   8115 ED 42       	SBC HL, BC
+0331   8117 38 03       	JR C, W2BSkip1
+0332   8119 3C          	INC A
+0333   811A 18 F9       	JR W2BLoop1
+0334   811C             
+0335   811C             W2BSkip1:
+0336   811C 09          	ADD HL, BC
+0337   811D DD 77 00    	LD (IX), A
+0338   8120 DD 23       	INC IX
+0339   8122             
+0340   8122             Write4BinDigitsIntoMsg:
+0341   8122             
+0342   8122 3E 30       	LD A, '0'		; 1000 column
+0343   8124 01 E8 03    	LD BC, 1000
+0344   8127 A7          	AND A
+0345   8128             
+0346   8128             W2BLoop2:
+0347   8128 ED 42       	SBC HL, BC
+0348   812A 38 03       	JR C, W2BSkip2
+0349   812C 3C          	INC A
+0350   812D 18 F9       	JR W2BLoop2
+0351   812F             
+0352   812F             W2BSkip2:
+0353   812F 09          	ADD HL, BC
+0354   8130 DD 77 00    	LD (IX), A
+0355   8133 DD 23       	INC IX
+0356   8135             
+0357   8135             Write3BinDigitsIntoMsg:
+0358   8135             
+0359   8135 3E 30       	LD A, '0'		; 100 column
+0360   8137 01 64 00    	LD BC, 100
+0361   813A A7          	AND A
+0362   813B             
+0363   813B             W2BLoop3:
+0364   813B ED 42       	SBC HL, BC
+0365   813D 38 03       	JR C, W2BSkip3
+0366   813F 3C          	INC A
+0367   8140 18 F9       	JR W2BLoop3
+0368   8142             
+0369   8142             W2BSkip3:
+0370   8142 09          	ADD HL, BC
+0371   8143 DD 77 00    	LD (IX), A
+0372   8146 DD 23       	INC IX
+0373   8148             
+0374   8148             	; HL is now < 100
+0375   8148 7D          	LD A, L
+0376   8149 DD E5       	PUSH IX
+0377   814B E1          	POP HL
+0378   814C             
+0379   814C             ; ...........
+0380   814C             
+0381   814C             ; Write2BinDigitsIntoMsg
+0382   814C             ; Input:
+0383   814C             ; 	A = Number to write (binary) [0..99]
+0384   814C             ;	HL = Points to word to write ascii characters
+0385   814C             Write2BinDigitsIntoMsg:
+0386   814C             
+0387   814C             	; D contains ASCII "0" which is the 10s digit
+0388   814C 16 30       	LD D, '0'
+0389   814E             
+0390   814E             WBDLoop:
+0391   814E             	; A>10?
+0392   814E FE 0A       	CP 10
+0393   8150 38 05       	JR C, WBDOut
+0394   8152             	
+0395   8152 D6 0A       	SUB 10
+0396   8154 14          	INC D
+0397   8155 18 F7       	JR WBDLoop
+0398   8157             
+0399   8157             WBDOut:
+0400   8157             	; Output 10s
+0401   8157 72          	LD (HL), D
+0402   8158 23          	INC HL
+0403   8159             	
+0404   8159             	; Ouptut Units
+0405   8159 C6 30       	ADD A, '0'
+0406   815B 77          	LD (HL), A
+0407   815C C9          	RET
+0408   815D             
+0409   815D             
+0410   815D             
+0411   815D             
+0412   815D             ; InitGame
+0413   815D             ; One off initialisation at the start of the game.
+0414   815D             ; Draws the screen/score etc.
+0415   815D             InitGame:
+0416   815D             
+0417   815D             	; Fully clear screen
+0418   815D 3E 07       	LD A, 7
+0419   815F CD 34 80    	CALL CLS
+0420   8162             	
+0421   8162             	
+0422   8162             	; Draw Top Bar:
+0423   8162             	; Score, Damage and Time
+0424   8162 21 00 58    	LD HL, 22528
+0425   8165 11 01 58    	LD DE, 22528+1
+0426   8168 01 05 00    	LD BC, 5
+0427   816B 36 10       	LD (HL), ScoreBarCol
+0428   816D ED B0       	LDIR
+0429   816F 01 1B 00    	LD BC, 32-5
+0430   8172 36 58       	LD (HL), DamageBarCol
+0431   8174 ED B0       	LDIR
+0432   8176 01 05 00    	LD BC, 5
+0433   8179 36 10       	LD (HL), ScoreBarCol
+0434   817B ED B0       	LDIR
+0435   817D 01 1B 00    	LD BC, 32-5
+0436   8180 36 60       	LD (HL), TimerBarCol
+0437   8182 ED B0       	LDIR
+0438   8184             
+0439   8184             
+0440   8184             	; Print "Score: Damage: " etc.
+0441   8184 21 00 40    	LD HL, 16384
+0442   8187 11 50 8B    	LD DE, ScoreImage
+0443   818A CD D9 87    	CALL PrintCharAtDE
+0444   818D CD D9 87    	CALL PrintCharAtDE
+0445   8190 CD D9 87    	CALL PrintCharAtDE
+0446   8193             	
+0447   8193 2C          	INC L
+0448   8194 2C          	INC L
+0449   8195             
+0450   8195 CD D9 87    	CALL PrintCharAtDE
+0451   8198 CD D9 87    	CALL PrintCharAtDE
+0452   819B CD D9 87    	CALL PrintCharAtDE
+0453   819E CD D9 87    	CALL PrintCharAtDE
+0454   81A1             	
+0455   81A1 2E 25       	LD L, 32+5
+0456   81A3             	
+0457   81A3 CD D9 87    	CALL PrintCharAtDE
+0458   81A6 CD D9 87    	CALL PrintCharAtDE
+0459   81A9 CD D9 87    	CALL PrintCharAtDE
+0460   81AC             	
+0461   81AC             
+0462   81AC             	; Initialise objects
+0463   81AC CD 80 80    	CALL InitRandom
+0464   81AF CD D5 86    	CALL InitLevel
+0465   81B2 CD E0 86    	CALL InitScore	
+0466   81B5 CD 70 87    	CALL InitDamage
+0467   81B8             
+0468   81B8             
+0469   81B8 C9          	RET
+0470   81B9             
+0471   81B9             
+0472   81B9             
+0473   81B9             	
+0474   81B9             ; InitSheet
+0475   81B9             ; Clears the memory copy of the maze
+0476   81B9             ; (Sheet as in Slippery Sid)
+0477   81B9             InitSheet:
+0478   81B9             
+0479   81B9             	; Clear Game Screen
+0480   81B9 CD 41 80    	CALL CLS_GAME
+0481   81BC             
+0482   81BC             
+0483   81BC             	; Initialise X, Y, DX and DY
+0484   81BC 3E 40       	LD A, RoomWidth/2	; X Pos = half way in
+0485   81BE 32 11 89    	LD (HeroXPos), A
+0486   81C1 3E 10       	LD A, 16
+0487   81C3 32 12 89    	LD (HeroYPos), A
+0488   81C6             
+0489   81C6 AF          	XOR A
+0490   81C7 32 14 89    	LD (HeroDY), A
+0491   81CA 3C          	INC A
+0492   81CB 32 13 89    	LD (HeroDX), A
+0493   81CE             	
+0494   81CE             	; Set timer to top
+0495   81CE CD 2E 87    	CALL InitTimer
+0496   81D1             	
+0497   81D1             
+0498   81D1             	; Empty SnakeHead Buffer
+0499   81D1 21 01 89    	LD HL, SnakeHeadBuffer
+0500   81D4 3E 08       	LD A, SnakeHeadBufferLen
+0501   81D6 87          	ADD A, A
+0502   81D7 47          	LD B, A
+0503   81D8 AF          	XOR A
+0504   81D9 77          _IS2:	LD (HL), A
+0505   81DA 23          	INC HL
+0506   81DB 10 FC       	DJNZ _IS2
+0507   81DD             	
+0508   81DD             	; Draw Snake Head
+0509   81DD 11 3A 89    	LD DE, SnakeRight
+0510   81E0 CD 96 86    	CALL DrawSnakeUDG
+0511   81E3             
+0512   81E3             	; Blank the Maze
+0513   81E3 21 00 C0    	LD HL, RoomBuffer
+0514   81E6 11 01 C0    	LD DE, RoomBuffer+1
+0515   81E9 01 FF 1F    	LD BC, RoomBufSize-1
+0516   81EC 36 07       	LD (HL), RoomSpaceCol		; Colour of Space
+0517   81EE ED B0       	LDIR
+0518   81F0             
+0519   81F0             	; Add Level Content
+0520   81F0 F3          	DI
+0521   81F1 FD E5       	PUSH IY
+0522   81F3 CD 23 83    	CALL AddLevelBits
+0523   81F6 FD E1       	POP IY
+0524   81F8 FB          	EI
+0525   81F9             	
+0526   81F9 C9          	RET
+0527   81FA             
+0528   81FA             
+0529   81FA             
+0530   81FA             
+0531   81FA             
+0532   81FA             
+0533   81FA             
+0534   81FA             
+0535   81FA             
+0536   81FA             
+0537   81FA             	.MODULE LevResult
+0538   81FA             
+0539   81FA             
+0540   81FA             ; DisplayLevelResult
+0541   81FA             DisplayLevelResult:
+0542   81FA             
+0543   81FA             	; ClearSnakeUDG
+0544   81FA CD 8B 86    	CALL ClearSnakeUDG
+0545   81FD             
+0546   81FD             	; Clear Game Screen
+0547   81FD CD 41 80    	CALL CLS_GAME
+0548   8200             
+0549   8200             	; Display Level Results
+0550   8200 CD 2C 82    	CALL _DLR_Message
+0551   8203             
+0552   8203             	; Clear Game Screen
+0553   8203 CD 5D 80    	CALL CLS_PixelsFrom16
+0554   8206 CD 41 80    	CALL CLS_GAME
+0555   8209             
+0556   8209             	; Increment Level
+0557   8209 CD DB 86    	CALL UpdateLevel	
+0558   820C             
+0559   820C C9          	RET
+0560   820D             
+0561   820D             
+0562   820D             ; DrawStripe
+0563   820D             ; Draws a two colour stripe across two attribute chars on the screen.
+0564   820D             ; Used to provide ink colour to "HalfMessages" that span attribute boundaries
+0565   820D             ; Input:
+0566   820D             ;	A = Stripe Y Position (0..22)
+0567   820D             ;   B = Top Colour
+0568   820D             ;   C = Bottom Colour
+0569   820D             DrawStripe:
+0570   820D             
+0571   820D             	; Turn E (Y position) into an attribute value
+0572   820D E6 1F       	AND 31	; Just in case
+0573   820F 07          	RLCA			; * 2
+0574   8210 07          	RLCA			; * 4
+0575   8211 07          	RLCA			; * 8
+0576   8212 6F          	LD L, A
+0577   8213 26 00       	LD H, 0
+0578   8215 29          	ADD HL, HL		; * 16
+0579   8216 29          	ADD HL, HL		; * 32
+0580   8217 11 00 58    	LD DE, 22528
+0581   821A 19          	ADD HL, DE
+0582   821B 54          	LD D, H
+0583   821C 5D          	LD E, L
+0584   821D 13          	INC DE
+0585   821E             
+0586   821E 70          	LD (HL), B		; Top Colour
+0587   821F 79          	LD A, C			; Store Bottom Colour
+0588   8220             	
+0589   8220 01 20 00    	LD BC, 32
+0590   8223 ED B0       	LDIR
+0591   8225             	
+0592   8225 77          	LD (HL), A		; Bottom Colour
+0593   8226             		
+0594   8226 01 1F 00    	LD BC, 31
+0595   8229 ED B0       	LDIR
+0596   822B C9          	RET
+0597   822C             
+0598   822C             _DLR_Message:
+0599   822C             
+0600   822C             	; Set up attribute area
+0601   822C             	
+0602   822C             	; Line 5/6 = White/Yellow
+0603   822C 3E 05       	LD A, 5
+0604   822E 06 47       	LD B, 64+7
+0605   8230 0E 46       	LD C, 64+6
+0606   8232 CD 0D 82    	CALL DrawStripe
+0607   8235             	
+0608   8235             	; Line 9/10 = Cyan/Green
+0609   8235 3E 09       	LD A, 9
+0610   8237 06 45       	LD B, 64+5
+0611   8239 0E 44       	LD C, 64+4
+0612   823B CD 0D 82    	CALL DrawStripe
+0613   823E             
+0614   823E             	; Line 13/14 = White/Yellow
+0615   823E 3E 0D       	LD A, 13
+0616   8240 06 47       	LD B, 64+7
+0617   8242 0E 46       	LD C, 64+6
+0618   8244 CD 0D 82    	CALL DrawStripe
+0619   8247             
+0620   8247             	; Line 22/23 = Blue/Red
+0621   8247 3E 16       	LD A, 22
+0622   8249 06 43       	LD B, 64+3
+0623   824B 0E 42       	LD C, 64+2
+0624   824D CD 0D 82    	CALL DrawStripe
+0625   8250             
+0626   8250             
+0627   8250             	; Copy Level into Message
+0628   8250             	
+0629   8250             	; Fill in Level number
+0630   8250 3A 1F 89    	LD A, (Level)
+0631   8253 21 43 8A    	LD HL, LevelEndMsg00
+0632   8256 CD 4C 81    	CALL Write2BinDigitsIntoMsg
+0633   8259 3A 19 89    	LD A, (DamageLeft)
+0634   825C 21 5B 8A    	LD HL, LevelEndMsg01
+0635   825F CD 4C 81    	CALL Write2BinDigitsIntoMsg
+0636   8262 3A 19 89    	LD A, (DamageLeft)
+0637   8265 21 65 8A    	LD HL, LevelEndMsg02
+0638   8268 CD 4C 81    	CALL Write2BinDigitsIntoMsg
+0639   826B 2A 20 89    	LD HL, (Score)
+0640   826E DD 21 6F 8A 	LD IX, LevelEndMsg03
+0641   8272 CD 0F 81    	CALL Write5BinDigitsIntoMsg
+0642   8275             
+0643   8275 DD 21 3D 8A 	LD IX, LevelEndMsg1
+0644   8279 21 A8 40    	LD HL, 16384 + 8 + (5*32)
+0645   827C CD 7C 87    	CALL PrintHalfMsg
+0646   827F             	
+0647   827F DD 21 4E 8A 	LD IX, LevelEndMsg2
+0648   8283 21 23 48    	LD HL, 16384 + 3 + 2048+(1*32)
+0649   8286 CD 7C 87    	CALL PrintHalfMsg
+0650   8289             
+0651   8289 DD 21 69 8A 	LD IX, LevelEndMsg3
+0652   828D 21 AA 48    	LD HL, 16384 + 10 + 2048+(5*32)
+0653   8290 CD 7C 87    	CALL PrintHalfMsg
+0654   8293             
+0655   8293             	; Wait a while
+0656   8293 01 96 00    	LD BC, 50*3		; 4 Second Wait
+0657   8296 CD EF 82    	Call Wait
+0658   8299             	
+0659   8299             	; Add Damage to Score in units
+0660   8299             	
+0661   8299             	; Get Damage * 10
+0662   8299 3A 19 89    	LD A, (DamageLeft)
+0663   829C 6F          	LD L, A
+0664   829D 26 00       	LD H, 0
+0665   829F 29          	ADD HL, HL	; *2
+0666   82A0 E5          	PUSH HL
+0667   82A1 29          	ADD HL, HL	; *4
+0668   82A2 29          	ADD HL, HL	; *8
+0669   82A3 C1          	POP BC
+0670   82A4 09          	ADD HL, BC	; *10
+0671   82A5 22 30 89    	LD (ScratchHL), HL
+0672   82A8             
+0673   82A8             _DLR_Loop1:
+0674   82A8             	
+0675   82A8             	; Decrement Damage
+0676   82A8 2A 30 89    	LD HL, (ScratchHL)
+0677   82AB 7C          	LD A, H
+0678   82AC B5          	OR L
+0679   82AD 28 32       	JR Z, _DLR_End
+0680   82AF 2B          	DEC HL
+0681   82B0 2B          	DEC HL
+0682   82B1 22 30 89    	LD (ScratchHL), HL
+0683   82B4             	
+0684   82B4             	; Write Damage
+0685   82B4 DD 21 71 8A 	LD IX, LevelEndMsg04
+0686   82B8 CD 35 81    	CALL Write3BinDigitsIntoMsg
+0687   82BB DD 21 71 8A 	LD IX, LevelEndMsg04
+0688   82BF 21 3A 48    	LD HL, 16384 + 3 + 2048+(1*32) + 23
+0689   82C2 CD 7C 87    	CALL PrintHalfMsg
+0690   82C5             	
+0691   82C5             	; Increment Score
+0692   82C5 2A 20 89    	LD HL, (Score)
+0693   82C8 23          	INC HL
+0694   82C9 23          	INC HL
+0695   82CA 22 20 89    	LD (Score), HL
+0696   82CD             
+0697   82CD             	; Write Score
+0698   82CD DD 21 6F 8A 	LD IX, LevelEndMsg03
+0699   82D1 CD 0F 81    	CALL Write5BinDigitsIntoMsg
+0700   82D4 DD 21 6F 8A 	LD IX, LevelEndMsg03
+0701   82D8 21 B0 48    	LD HL, 16384 + 10 + 2048+(5*32) + 6
+0702   82DB CD 7C 87    	CALL PrintHalfMsg
+0703   82DE             	
+0704   82DE 76          	HALT
+0705   82DF             	
+0706   82DF 18 C7       	JR _DLR_Loop1
+0707   82E1             	
+0708   82E1             	
+0709   82E1             	
+0710   82E1             _DLR_End:
+0711   82E1             
+0712   82E1             	; "Press any key to continue..."
+0713   82E1 DD 21 75 8A 	LD IX, LevelEndMsg4
+0714   82E5 21 C2 50    	LD HL, 16384 + 4096 + (6*32) + 2
+0715   82E8 CD 7C 87    	CALL PrintHalfMsg
+0716   82EB             	
+0717   82EB             	; Wait for key
+0718   82EB CD AD 80    	CALL SafeWaitKey
+0719   82EE             	
+0720   82EE             	; Clear Screen
+0721   82EE             	
+0722   82EE C9          	RET
+0723   82EF             
+0724   82EF             
+0725   82EF             ; Waits so many 50th seconds by value given by BC
+0726   82EF             Wait:
+0727   82EF 76          	HALT
+0728   82F0 0B          	DEC BC
+0729   82F1 78          	LD A, B
+0730   82F2 B1          	OR C
+0731   82F3 20 FA       	JR NZ, Wait
+0732   82F5 C9          	RET
+0733   82F6             	
+0734   82F6             ; TransitionPixels
+0735   82F6             ; Clears out pixels on a given set of lines by a lookup table
+0736   82F6             ; Will scroll out stuff
+0737   82F6             ; Input:
+0738   82F6             ;	IX contains the lookup table ending in 0000h
+0739   82F6             ;	
+0740   82F6             TransitionPixels:
+0741   82F6             
+0742   82F6 06 00       	LD B, 0				; 256 scrolls
+0743   82F8             _TPLoop0:
+0744   82F8 C5          	PUSH BC
+0745   82F9 DD E5       	PUSH IX				; Save for next look
+0746   82FB             
+0747   82FB             _TPLoop1:
+0748   82FB             	
+0749   82FB             	; End of Table?
+0750   82FB DD 7E 00    	LD A, (IX)
+0751   82FE DD A6 01    	AND (IX+1)
+0752   8301             	
+0753   8301 28 1A       	JR Z, _TPNextScroll
+0754   8303             
+0755   8303             	; Scroll 8 lines pointed to by IX word
+0756   8303 DD 6E 00    	LD L, (IX)
+0757   8306 DD 66 01    	LD H, (IX+1)
+0758   8309 DD 23       	INC IX
+0759   830B DD 23       	INC IX
+0760   830D             	
+0761   830D 0E 08       	LD C, 8				; 8 Lines
+0762   830F             _TPLoop2:
+0763   830F E5          	PUSH HL
+0764   8310 06 20       	LD B, 32			; 32 Columns
+0765   8312 A7          	AND A				; Clear Carry Flag
+0766   8313             _TPLoop3:
+0767   8313 CB 16       	RL (HL)
+0768   8315 23          	INC HL
+0769   8316 10 FB       	DJNZ _TPLoop3
+0770   8318             	
+0771   8318 E1          	POP HL
+0772   8319 24          	INC H
+0773   831A 0D          	DEC C
+0774   831B 20 F2       	JR NZ, _TPLoop2
+0775   831D             
+0776   831D             _TPNextScroll:
+0777   831D DD E1       	POP IX				; Restore IX to start of table again
+0778   831F C1          	POP BC
+0779   8320 10 D6       	DJNZ _TPLoop0
+0780   8322             	
+0781   8322 C9          	RET
+0782   8323             
+0783   8323             
+0784   8323             ;	
+0785   8323             ;	
+0786   8323             ;	; Test
+0787   8323             ;	LD HL, 0
+0788   8323             ;TestLoop:
+0789   8323             ;	PUSH HL	
+0790   8323             ;
+0791   8323             ;	LD IX, TestMsg01
+0792   8323             ;	CALL Write5BinDigitsIntoMsg
+0793   8323             ;
+0794   8323             ;	LD IX, TestMsg
+0795   8323             ;	LD HL, 16384 + 4096 + 5 + (5*32)
+0796   8323             ;	CALL PrintHalfMsg
+0797   8323             ;
+0798   8323             ;	POP HL
+0799   8323             ;	INC HL
+0800   8323             ;	JR TestLoop
+0801   8323             ;	
+0802   8323             ;TestMsg01:	.equ $+15
+0803   8323             ;TestMsg:	.text "Your number is ?????."
+0804   8323             ;		.byte 0
+0805   8323             ;
+0806   8323             ;
+0807   8323             
+0808   8323             
+0809   8323             
+0810   8323             
+0811   8323             
+0812   8323             
+0813   8323             
+0814   8323             
+0815   8323             
+0816   8323             	.MODULE LevelBits
+0817   8323             
+0818   8323             ; AddLevelBits 
+0819   8323             AddLevelBits:
+0820   8323             ;	JR _LevelTest	; Test Level
+0821   8323             
+0822   8323 3A 1F 89    	LD A, (Level)	
+0823   8326             _LevelLoop:
+0824   8326 3D          	DEC A
+0825   8327 C8          	RET Z		; Level 1 = Nothing
+0826   8328 3D          	DEC A
+0827   8329 28 20       	JR Z, _Level2	; Level 2
+0828   832B 3D          	DEC A
+0829   832C 28 26       	JR Z, _Level3	; Level 3
+0830   832E 3D          	DEC A
+0831   832F 28 2C       	JR Z, _Level4	; Level 4
+0832   8331 3D          	DEC A
+0833   8332 28 32       	JR Z, _Level5	; Level 5
+0834   8334 3D          	DEC A
+0835   8335 28 30       	JR Z, _Level6	; Level 6
+0836   8337 3D          	DEC A
+0837   8338 28 2E       	JR Z, _Level7	; Level 7
+0838   833A 3D          	DEC A
+0839   833B 28 2C       	JR Z, _Level8	; Level 8
+0840   833D 3D          	DEC A
+0841   833E 28 2A       	JR Z, _Level9	; Level 9
+0842   8340 3D          	DEC A
+0843   8341 28 28       	JR Z, _Level10	; Level 10
+0844   8343 3D          	DEC A
+0845   8344 28 26       	JR Z, _Level11	; Level 11
+0846   8346 3D          	DEC A
+0847   8347 28 24       	JR Z, _Level12	; Level 12
+0848   8349 18 DB       	JR _LevelLoop
+0849   834B             
+0850   834B             
+0851   834B             _LevelTest:
+0852   834B             
+0853   834B             
+0854   834B             _Level2:	; Grass
+0855   834B             
+0856   834B 3E 08       	LD A, 8
+0857   834D 21 61 84    	LD HL, SpriteGrass
+0858   8350 CD 6E 83    	CALL Top2BottomFill
+0859   8353 C9          	RET
+0860   8354             	
+0861   8354             
+0862   8354             
+0863   8354             _Level3:	; Trees
+0864   8354             
+0865   8354 3E 08       	LD A, 8
+0866   8356 21 AE 84    	LD HL, SpriteTree
+0867   8359 CD 6E 83    	CALL Top2BottomFill
+0868   835C C9          	RET
+0869   835D             
+0870   835D             _Level4:	; Flowers
+0871   835D 3E 08       	LD A, 8
+0872   835F 21 0F 84    	LD HL, SpriteFlower
+0873   8362 CD 6E 83    	CALL Top2BottomFill
+0874   8365 C9          	RET
+0875   8366             	
+0876   8366             
+0877   8366             _Level5:
+0878   8366             	
+0879   8366 C9          	RET
+0880   8367             
+0881   8367             _Level6:
+0882   8367 C9          	RET
+0883   8368             
+0884   8368             _Level7:
+0885   8368 C9          	RET
+0886   8369             
+0887   8369             _Level8:
+0888   8369 C9          	RET
+0889   836A             
+0890   836A             _Level9:
+0891   836A C9          	RET
+0892   836B             
+0893   836B             _Level10:
+0894   836B C9          	RET
+0895   836C             
+0896   836C             _Level11:
+0897   836C C9          	RET
+0898   836D             
+0899   836D             _Level12:
+0900   836D C9          	RET
+0901   836E             
+0902   836E             
+0903   836E             ; Top2BottomFill
+0904   836E             ; Fills a sprite of your choosing evenly down but in random X
+0905   836E             ; across the maze
+0906   836E             ; Input:
+0907   836E             ;	HL = Sprite
+0908   836E             ;	A  = Y Step between each Sprite
+0909   836E             Top2BottomFill:
+0910   836E             
+0911   836E             	; Save
+0912   836E 32 A7 83    	LD (_T2BYStep), A
+0913   8371 22 A5 83    	LD (_T2BSprite), HL
+0914   8374             
+0915   8374 AF          	XOR A		; First tree will be at this height
+0916   8375 DD 21 00 C0 	LD IX, RoomBuffer
+0917   8379             
+0918   8379 F5          _L2a	PUSH AF
+0919   837A DD E5       	PUSH IX
+0920   837C             	
+0921   837C             	; Get a random X position
+0922   837C CD 89 80    	CALL Random
+0923   837F E6 7F       	AND RoomWidthMask
+0924   8381             
+0925   8381 16 00       	LD D, 0
+0926   8383 5F          	LD E, A
+0927   8384 DD 19       	ADD IX, DE
+0928   8386             
+0929   8386             	; Draw Tree
+0930   8386 2A A5 83    	LD HL, (_T2BSprite)
+0931   8389 CD C4 83    	CALL DrawSprite
+0932   838C             
+0933   838C             	; Restore Maze Row (IX)
+0934   838C DD E1       	POP IX
+0935   838E             	
+0936   838E             	; Move IX down "_T2BYStep" Room squares
+0937   838E 11 80 00    	LD DE, RoomWidth
+0938   8391 3A A7 83    	LD A, (_T2BYStep)
+0939   8394 DD 19       _L2b:	ADD IX, DE
+0940   8396 3D          	DEC A
+0941   8397 20 FB       	JR NZ, _L2b
+0942   8399 C6 08       	ADD A, 8
+0943   839B             
+0944   839B             	; Restore Y position (A)
+0945   839B F1          	POP AF
+0946   839C             	
+0947   839C             	; Move A down "_T2BYStep" Room squares
+0948   839C 21 A7 83    	LD HL, _T2BYStep
+0949   839F 86          	ADD A, (HL)
+0950   83A0             
+0951   83A0             	; End?
+0952   83A0 FE 30       	CP RoomHeight-16
+0953   83A2 38 D5       	JR C, _L2a
+0954   83A4 C9          	RET
+0955   83A5             
+0956   83A5 00 00       _T2BSprite:	.word 0	; Address of sprite to draw
+0957   83A7 00          _T2BYStep:	.byte 0	; Y Step
+0958   83A8             
+0959   83A8             
+0960   83A8             
+0961   83A8             ; DrawWalls
+0962   83A8             ; Draws a wall around the whole maze
+0963   83A8             DrawWalls:
+0964   83A8             	; Make top wall (Red+32 = Yellow)
+0965   83A8 21 00 C0    	LD HL, RoomBuffer
+0966   83AB 11 01 C0    	LD DE, RoomBuffer+1
+0967   83AE 01 7F 00    	LD BC, RoomWidth-1
+0968   83B1 36 16       	LD (HL), RoomWallCol		; Colour of Wall
+0969   83B3 ED B0       	LDIR
+0970   83B5             	
+0971   83B5             	; Make left wall (Red)
+0972   83B5 21 00 C0    	LD HL, RoomBuffer
+0973   83B8 11 80 00    	LD DE, RoomWidth
+0974   83BB 06 40       	LD B,  RoomHeight
+0975   83BD 3E 16       	LD A,  RoomWallCol		; Colour of Wall
+0976   83BF 77          _IS1:	LD (HL), A
+0977   83C0 19          	ADD HL, DE
+0978   83C1 10 FC       	DJNZ _IS1
+0979   83C3 C9          	RET
+0980   83C4             	
+0981   83C4             ; DrawTree
+0982   83C4             ; Draws a tree at IX where IX is top left and size is 8x7
+0983   83C4             ; Shape:
+0984   83C4             ;   X   X  X X
+0985   83C4             ;   XX  XX  X
+0986   83C4             ;   0123456789
+0987   83C4             ;     X  X X
+0988   83C4             ;    X XX X
+0989   83C4             ;      XX
+0990   83C4             ;      XX
+0991   83C4             ;      XX
+0992   83C4             
+0993   83C4             
+0994   83C4             
+0995   83C4             
+0996   83C4             
+0997   83C4             ; DrawSprite
+0998   83C4             ; Draws a sprite pointed to by HL at Maze Address pointed to by IX
+0999   83C4             DrawSprite:
+1000   83C4             	; Save base IX position (in case of AT command)
+1001   83C4 DD 22 0D 84 	LD (DWIXBase), IX
+1002   83C8             	
+1003   83C8             _DWLoop:; Get next byte
+1004   83C8 7E          	LD A, (HL)
+1005   83C9 23          	INC HL
+1006   83CA             
+1007   83CA             	; End?
+1008   83CA FE 7A       	CP ENDSPRITE
+1009   83CC C8          	RET Z
+1010   83CD             	
+1011   83CD             	; New Colour?
+1012   83CD FE 78       	CP COLOUR
+1013   83CF 28 14       	JR Z, _DWChangeColour
+1014   83D1             	
+1015   83D1             	; Newline?
+1016   83D1 FE 79       	CP NEWLINE
+1017   83D3 28 14       	JR Z, _DWNewLine
+1018   83D5             	
+1019   83D5             	; Jump to new address?
+1020   83D5 FE 7B       	CP JUMP
+1021   83D7 28 17       	JR Z, _DWJump
+1022   83D9             	
+1023   83D9             	; Jump to new x/y position
+1024   83D9 FE 7C       	CP AT
+1025   83DB 28 19       	JR Z, _DWAt
+1026   83DD             	
+1027   83DD             	; A = Poke Offset
+1028   83DD             	; Poke IY displacement
+1029   83DD 32 E2 83    	LD ($+5), A
+1030   83E0 DD 71 00    	LD (IX+0), C	
+1031   83E3 18 E3       	JR _DWLoop	
+1032   83E5             
+1033   83E5             
+1034   83E5             _DWChangeColour:
+1035   83E5 4E          	LD C, (HL)
+1036   83E6 23          	INC HL
+1037   83E7 18 DF       	JR _DWLoop
+1038   83E9             
+1039   83E9             _DWNewLine:
+1040   83E9 11 80 00    	LD DE, RoomWidth
+1041   83EC DD 19       	ADD IX, DE
+1042   83EE 18 D8       	JR _DWLoop
+1043   83F0             
+1044   83F0             _DWJump:
+1045   83F0 7E          	LD A, (HL)
+1046   83F1 23          	INC HL
+1047   83F2 66          	LD H, (HL)
+1048   83F3 6F          	LD L, A
+1049   83F4 18 D2       	JR _DWLoop
+1050   83F6             	
+1051   83F6             _DWAt:
+1052   83F6             	; Go back to (0,0)
+1053   83F6 DD 2A 0D 84 	LD IX, (DWIXBase)
+1054   83FA             	
+1055   83FA             	; Get Y coordinate
+1056   83FA 7E          	LD A, (HL)
+1057   83FB 23          	INC HL
+1058   83FC             	
+1059   83FC             	; Move down
+1060   83FC 11 80 00    	LD DE, RoomWidth
+1061   83FF DD 19       _DWAt0:	ADD IX, DE
+1062   8401 3D          	DEC A
+1063   8402 20 FB       	JR NZ, _DWAt0
+1064   8404             	
+1065   8404             	; Get X coordinate
+1066   8404 7E          	LD A, (HL)
+1067   8405 23          	INC HL
+1068   8406             
+1069   8406             	; Move Across	
+1070   8406 16 00       	LD D, 0
+1071   8408 5F          	LD E, A
+1072   8409 DD 19       	ADD IX, DE
+1073   840B 18 BB       	JR _DWLoop
+1074   840D             
+1075   840D             
+1076   840D 00 00       DWIXBase:	.word 0
+1077   840F             
+1078   840F             ; Constants
+1079   840F             COLOUR:	.equ 120	; Code for COLOUR <c>
+1080   840F             NEWLINE .equ 121	; Code for NEW LINE
+1081   840F             ENDSPRITE .equ 122	; Code for END OF SPRITE
+1082   840F             JUMP 	.equ 123	; Code for JUMP <address16> Jump reader to new address
+1083   840F             AT	.equ 124	; Code for AT <y> <x>
+1084   840F             
+1085   840F             WHITE:	.equ (7*8)
+1086   840F             YELLOW:	.equ (6*8)
+1087   840F             CYAN:	.equ (5*8)
+1088   840F             GREEN:	.equ (4*8)
+1089   840F             MAGENTA:.equ (3*8)
+1090   840F             RED:	.equ (2*8)
+1091   840F             BLUE:	.equ (1*8)
+1092   840F             BLACK:	.equ (0*8)
+1093   840F             
+1094   840F             
+1095   840F             SpriteFlower:
+1096   840F             	; Petals
+1097   840F 78 38       	.byte COLOUR, WHITE
+1098   8411 07080A0B79  	.byte 7, 8, 10, 11, NEWLINE
+1099   8416 07080A0B79  	.byte 7, 8, 10, 11, NEWLINE
+1100   841B 05060C0D79  	.byte 5, 6, 12, 13, NEWLINE
+1101   8420 0506070B0C0D	.byte 5, 6, 7, 11, 12, 13, NEWLINE
+1101   8426 79
+1102   8427 05060C0D79  	.byte 5, 6, 12, 13, NEWLINE
+1103   842C 06070B0C79  	.byte 6, 7, 11, 12, NEWLINE
+1104   8431 06070B0C79  	.byte 6, 7, 11, 12, NEWLINE
+1105   8436             
+1106   8436             	; Bud
+1107   8436 7C 02 00    	.byte AT, 2, 0
+1108   8439 78 30       	.byte COLOUR, YELLOW
+1109   843B 08 09 0A 79 	.byte 8, 9, 10, NEWLINE
+1110   843F 08 09 0A 79 	.byte 8, 9, 10, NEWLINE
+1111   8443 08 09 0A 79 	.byte 8, 9, 10, NEWLINE
+1112   8447             
+1113   8447             	; Stork
+1114   8447 7C 05 09    	.byte AT, 5, 9
+1115   844A 78 20       	.byte COLOUR, GREEN
+1116   844C 00 79       	.byte 0, NEWLINE
+1117   844E 00 79       	.byte 0, NEWLINE
+1118   8450 00 79       	.byte 0, NEWLINE
+1119   8452 00 79       	.byte 0, NEWLINE
+1120   8454 00 79       	.byte 0, NEWLINE
+1121   8456 00 79       	.byte 0, NEWLINE
+1122   8458 00 79       	.byte 0, NEWLINE
+1123   845A 00          	.byte 0
+1124   845B             
+1125   845B 7C 0C 00    	.byte AT, 12, 0
+1126   845E 7B          	.byte JUMP
+1127   845F 61 84       	.word SpriteGrass
+1128   8461             
+1129   8461             SpriteGrass:
+1130   8461 78 20       	.byte COLOUR, 32
+1131   8463 06 09       	.byte 6, 9, 
+1132   8465 78 60       	.byte COLOUR, 32+64
+1133   8467 0D 12 79    	.byte 13, 18, NEWLINE
+1134   846A 78 20       	.byte COLOUR, 32
+1135   846C 07 09 0B    	.byte 7, 9, 11, 
+1136   846F 78 60       	.byte COLOUR, 32+64
+1137   8471 0D 0F 11 79 	.byte 13, 15, 17, NEWLINE
+1138   8475 78 20       	.byte COLOUR, 32
+1139   8477 03050708090A	.byte 3, 5, 7, 8, 9, 10, 11
+1139   847D 0B
+1140   847E 78 60       	.byte COLOUR, 32+64
+1141   8480 0C0D0E0F1113	.byte 12, 13, 14, 15, 17, 19, 21, NEWLINE
+1141   8486 1579
+1142   8488 78 20       	.byte COLOUR, 32
+1143   848A 01030406070A	.byte 1, 3, 4, 6, 7, 10, 11, 12
+1143   8490 0B0C
+1144   8492 78 60       	.byte COLOUR, 32+64
+1145   8494 0D0E0F101112	.byte 13, 14, 15, 16, 17, 18, 19, 21, 22, NEWLINE
+1145   849A 13151679
+1146   849E 78 20       	.byte COLOUR, 32
+1147   84A0 00 02 03 05 	.byte 0, 2, 3, 5, 
+1148   84A4 78 60       	.byte COLOUR, 32+64
+1149   84A6 0F1011121415	.byte 15, 16, 17, 18, 20, 21, 23, ENDSPRITE
+1149   84AC 177A
+1150   84AE             	
+1151   84AE             	
+1152   84AE             	
+1153   84AE             	
+1154   84AE             SpriteTree:
+1155   84AE 78 20       	.byte COLOUR, 32
+1156   84B0 03 06 08 79 	.byte 3, 6, 8, NEWLINE
+1157   84B4 020507090B79	.byte 2, 5, 7, 9, 11, NEWLINE
+1158   84BA 0306080A0C0D	.byte 3, 6, 8, 10, 12, 13, NEWLINE
+1158   84C0 79
+1159   84C1 01040507090B	.byte 1, 4, 5, 7, 9, 11, 12, NEWLINE
+1159   84C7 0C79
+1160   84C9 00020305060A	.byte 0, 2, 3, 5, 6, 10, NEWLINE
+1160   84CF 79
+1161   84D0 01030607090C	.byte 1, 3, 6, 7, 9, 12, NEWLINE
+1161   84D6 79
+1162   84D7 020406080B79	.byte 2, 4, 6, 8, 11, NEWLINE
+1163   84DD 03 04 09 0A 	.byte 3, 4, 9, 10
+1164   84E1 78 10       	.byte COLOUR, 16
+1165   84E3 07 79 06 07 	.byte 7, NEWLINE, 6, 7
+1166   84E7 78 20       	.byte COLOUR, 32
+1167   84E9 04 05 09    	.byte 4, 5, 9
+1168   84EC 78 10       	.byte COLOUR, 16
+1169   84EE 06 07 79    	.byte 6, 7, NEWLINE
+1170   84F1 06 07 79    	.byte 6, 7, NEWLINE
+1171   84F4 06 07 79    	.byte 6, 7, NEWLINE
+1172   84F7 06 07 79    	.byte 6, 7, NEWLINE
+1173   84FA 06 07 79    	.byte 6, 7, NEWLINE
+1174   84FD 0506070879  	.byte 5, 6, 7, 8, NEWLINE
+1175   8502 040608097A  	.byte 4, 6, 8, 9, ENDSPRITE
+1176   8507             
+1177   8507             
+1178   8507             
+1179   8507             ; RenderRoom
+1180   8507             ; Draws the screen based on Hero's X/Y position in Maze
+1181   8507             RenderRoom:
+1182   8507             
+1183   8507             	; Set ScreenXPos, ScreenYPos and ScreenHL
+1184   8507 CD 6B 85    	CALL CalcScreenFromHero
+1185   850A             	
+1186   850A             	
+1187   850A             	; A holds the current Y position in Maze being rendered
+1188   850A             	; It is incremented and ANDed each row so we can detect a
+1189   850A             	; "Maze Wrap".
+1190   850A 3A 16 89    	LD A, (ScreenYPos)
+1191   850D             
+1192   850D             	; Draw Room
+1193   850D 2A 17 89    	LD HL, (ScreenHL)	; Maze Memory Location that corresponds to ...
+1194   8510 11 40 58    	LD DE, 22528+64		; Screen Top Left Memory Address
+1195   8513 06 16       	LD B,  22		; Screen Height
+1196   8515             
+1197   8515             
+1198   8515             	
+1199   8515             	; INSTRUCTION COUNT MUST BE WIDTH OF SCREEN
+1200   8515             	; (THE LOG2 POWER OF ROOM WIDTH e.g. 32 instructions = screen width = 32)
+1201   8515 C5          _RR1:	PUSH BC	; Note: LDI still decrements BC so we must save it
+1202   8516 ED A0       	LDI
+1203   8518 ED A0       	LDI
+1204   851A ED A0       	LDI
+1205   851C ED A0       	LDI
+1206   851E ED A0       	LDI
+1207   8520 ED A0       	LDI
+1208   8522 ED A0       	LDI
+1209   8524 ED A0       	LDI
+1210   8526 ED A0       	LDI
+1211   8528 ED A0       	LDI
+1212   852A ED A0       	LDI
+1213   852C ED A0       	LDI
+1214   852E ED A0       	LDI
+1215   8530 ED A0       	LDI
+1216   8532 ED A0       	LDI
+1217   8534 ED A0       	LDI
+1218   8536 ED A0       	LDI
+1219   8538 ED A0       	LDI
+1220   853A ED A0       	LDI
+1221   853C ED A0       	LDI
+1222   853E ED A0       	LDI
+1223   8540 ED A0       	LDI
+1224   8542 ED A0       	LDI
+1225   8544 ED A0       	LDI
+1226   8546 ED A0       	LDI
+1227   8548 ED A0       	LDI
+1228   854A ED A0       	LDI
+1229   854C ED A0       	LDI
+1230   854E ED A0       	LDI
+1231   8550 ED A0       	LDI
+1232   8552 ED A0       	LDI
+1233   8554 ED A0       	LDI
+1234   8556 C1          	POP BC
+1235   8557             
+1236   8557 D5          	PUSH DE
+1237   8558             	
+1238   8558             	; Move Maze Position down to start of next row
+1239   8558 11 60 00    	LD DE, RoomWidth-32		; Maze Width less 1 screen width
+1240   855B 19          	ADD HL, DE
+1241   855C             	
+1242   855C             	; Increment Row and MOD
+1243   855C 3C          	INC A
+1244   855D E6 3F       	AND RoomHeightMask
+1245   855F 20 06       	JR NZ, _RRSkipVWrap
+1246   8561 11 00 20    	LD DE, RoomBufSize
+1247   8564 A7          	AND A			; Clear Carry Flag
+1248   8565 ED 52       	SBC HL, DE
+1249   8567             	
+1250   8567             _RRSkipVWrap:
+1251   8567             
+1252   8567 D1          	POP DE
+1253   8568             	
+1254   8568             	; Loop next row	
+1255   8568 10 AB       	DJNZ _RR1
+1256   856A C9          	RET
+1257   856B             	
+1258   856B             
+1259   856B             
+1260   856B             ; CalcScreenFromHero
+1261   856B             ; Calculates the Screen's top left attribute;s X/Y position and Memory location in Maze
+1262   856B             CalcScreenFromHero:
+1263   856B             
+1264   856B 3A 11 89    	LD A, (HeroXPos)
+1265   856E D6 10       	SUB 16			; Move from Middle to Left
+1266   8570 E6 7F       	AND RoomWidthMask	; Wrap using MOD mask (works because maze is power of 2 in size)
+1267   8572 32 15 89    	LD (ScreenXPos), A	; Save Screen X Pos
+1268   8575             	
+1269   8575 5F          	LD E, A			; Save for later to convert Memory Address
+1270   8576             	
+1271   8576 3A 12 89    	LD A, (HeroYPos)
+1272   8579 D6 0C       	SUB 12			; Move from Middle to Top
+1273   857B E6 3F       	AND RoomHeightMask	; Wrap using MOD mask (works because maze is power of 2 in size)
+1274   857D 32 16 89    	LD (ScreenYPos), A	; Save Screen X Pos
+1275   8580             	
+1276   8580 57          	LD D, A			; Save for later to convert Memory Address
+1277   8581             	
+1278   8581 CD 88 85    	CALL ConvertXYtoHL	; Convert an X/Y position in maze to a Memory Address
+1279   8584             	
+1280   8584 22 17 89    	LD (ScreenHL), HL
+1281   8587             	
+1282   8587 C9          	RET
+1283   8588             	
+1284   8588             	
+1285   8588             
+1286   8588             
+1287   8588             
+1288   8588             ; ConvertXYtoHL
+1289   8588             ; Takes an X and Y position and works out its corresponding Memory Address within the Maze
+1290   8588             ; Input:
+1291   8588             ;	D = Y Position
+1292   8588             ;	E = X Position
+1293   8588             ; Output:
+1294   8588             ; 	HL = Memory location in Maze
+1295   8588             ; Damage:
+1296   8588             ;	DE = Room Buffer base position
+1297   8588             ConvertXYtoHL:
+1298   8588             	
+1299   8588             	; HL = Y Position
+1300   8588 26 00       	LD H, 0
+1301   858A 6A          	LD L, D
+1302   858B             
+1303   858B             	; INSTRUCTION COUNT MUST BE THE LOG2 POWER OF ROOM WIDTH (e.g. 6 instructions = 64 width)
+1304   858B 29          	ADD HL, HL
+1305   858C 29          	ADD HL, HL
+1306   858D 29          	ADD HL, HL
+1307   858E 29          	ADD HL, HL
+1308   858F 29          	ADD HL, HL
+1309   8590 29          	ADD HL, HL
+1310   8591 29          	ADD HL, HL
+1311   8592             
+1312   8592             	; DE = X Position
+1313   8592 16 00       	LD D, 0
+1314   8594 19          	ADD HL, DE
+1315   8595             	
+1316   8595             	; DE = Maze Buffer
+1317   8595 11 00 C0    	LD DE, RoomBuffer
+1318   8598 19          	ADD HL, DE
+1319   8599 C9          	RET
+1320   859A             	
+1321   859A             
+1322   859A             ; DrawSnakeHead
+1323   859A             ; Draws a graphical head onto the Maze so it will appear later
+1324   859A             DrawSnakeHead_OLD:
+1325   859A             
+1326   859A             	; Get Memory Address from Hero Position
+1327   859A 2A 11 89    	LD HL, (HeroXPos)
+1328   859D EB          	EX DE, HL
+1329   859E CD 88 85    	CALL ConvertXYtoHL
+1330   85A1 ED 5F       	LD A, R
+1331   85A3 E6 38       	AND 56		; Paper Only
+1332   85A5 F6 08       	OR  8		; Ensure not Black
+1333   85A7 77          	LD (HL), A
+1334   85A8 C9          	RET
+1335   85A9             
+1336   85A9             
+1337   85A9             ; DrawSnakeHead
+1338   85A9             ; Draws a graphical head onto the Maze so it will appear later
+1339   85A9             DrawSnakeHead:
+1340   85A9             
+1341   85A9             	; Get Memory Address from Hero Position
+1342   85A9 2A 11 89    	LD HL, (HeroXPos)
+1343   85AC EB          	EX DE, HL
+1344   85AD CD 88 85    	CALL ConvertXYtoHL
+1345   85B0             	
+1346   85B0 DD 21 01 89 	LD IX, SnakeHeadBuffer
+1347   85B4 06 07       	LD B, 7	; Last 7 positions need repainting
+1348   85B6 3E 08       	LD A, 8 ; Colour of snake head
+1349   85B8             
+1350   85B8             _DSHLoop:
+1351   85B8             	; Paint HL with Snake Head Colour and update colour
+1352   85B8 77          	LD (HL), A
+1353   85B9 C6 08       	ADD A, 8
+1354   85BB             	
+1355   85BB             	; DE = Index [i]
+1356   85BB DD 5E 00    	LD E, (IX+0)
+1357   85BE DD 56 01    	LD D, (IX+1)
+1358   85C1             
+1359   85C1             	; Index [i] = HL
+1360   85C1 DD 75 00    	LD (IX+0), L
+1361   85C4 DD 74 01    	LD (IX+1), H
+1362   85C7             	
+1363   85C7 DD 23       	INC IX
+1364   85C9 DD 23       	INC IX
+1365   85CB             	
+1366   85CB EB          	EX DE, HL
+1367   85CC             
+1368   85CC 10 EA       	DJNZ _DSHLoop
+1369   85CE C9          	RET
+1370   85CF             
+1371   85CF             
+1372   85CF             ; UpdatePosition
+1373   85CF             ; This will take the keyboard/joystick keypresses from KeyData byte
+1374   85CF             ; and change the direction of the Snake if required.
+1375   85CF             ; It will then adjust the X/Y position based on DX/DY
+1376   85CF             UpdatePosition:
+1377   85CF             
+1378   85CF             	; Get current DX and DY (B = DX; C = DY)
+1379   85CF 3A 13 89    	LD A, (HeroDX)
+1380   85D2 47          	LD B, A
+1381   85D3 3A 14 89    	LD A, (HeroDY)
+1382   85D6 4F          	LD C, A	
+1383   85D7             	
+1384   85D7             	; Get KeyData.  If no keys are pressed, then skip testing them individually
+1385   85D7 3A 00 89    	LD A, (KeyData)
+1386   85DA B7          	OR A
+1387   85DB 28 5D       	JR Z, _UPAfterKeys
+1388   85DD             
+1389   85DD             	
+1390   85DD             	; FIRE?
+1391   85DD 0F          	RRCA
+1392   85DE 30 06       	JR NC, _UP1
+1393   85E0             	
+1394   85E0             	; Fire means quit.  We simply RET to main code by dropping the last call on the stack
+1395   85E0 CF          	RST 08h
+1396   85E1 FF          	.byte 255
+1397   85E2 E1          	POP HL		; Dummy POP
+1398   85E3 E1          	POP HL		; Dummy POP
+1399   85E4 E1          	POP HL		; Dummy POP
+1400   85E5 C9          	RET		; Return to BASIC
+1401   85E6             
+1402   85E6             	
+1403   85E6             	; UP?
+1404   85E6 0F          _UP1:	RRCA
+1405   85E7 30 10       	JR NC, _UP2
+1406   85E9             
+1407   85E9             	; Test: If we are currently going UP or DOWN then ignore
+1408   85E9 57          	LD D, A
+1409   85EA 79          	LD A, C		; Test HeroDY
+1410   85EB B7          	OR A
+1411   85EC 7A          	LD A, D
+1412   85ED 20 0A       	JR NZ, _UP2
+1413   85EF             	
+1414   85EF             	; Set to UP
+1415   85EF 06 00       	LD B, 0
+1416   85F1 0E FF       	LD C, -1
+1417   85F3             
+1418   85F3 11 32 89    	LD DE, SnakeUp
+1419   85F6 CD 96 86    	CALL DrawSnakeUDG
+1420   85F9             	;JR _UP5
+1421   85F9             
+1422   85F9             	; DOWN?
+1423   85F9 0F          _UP2:	RRCA
+1424   85FA 30 10       	JR NC, _UP3
+1425   85FC             
+1426   85FC             	; Test: If we are currently going UP or DOWN then ignore
+1427   85FC 57          	LD D, A
+1428   85FD 79          	LD A, C		; Test HeroDY
+1429   85FE B7          	OR A
+1430   85FF 7A          	LD A, D
+1431   8600 20 0A       	JR NZ, _UP3
+1432   8602             	
+1433   8602             	; Set to DOWN
+1434   8602 06 00       	LD B, 0
+1435   8604 0E 01       	LD C, 1
+1436   8606             
+1437   8606 11 42 89    	LD DE, SnakeDown
+1438   8609 CD 96 86    	CALL DrawSnakeUDG
+1439   860C             	;JR _UP5
+1440   860C             
+1441   860C             
+1442   860C             	; RIGHT?
+1443   860C 0F          _UP3:	RRCA
+1444   860D 30 10       	JR NC, _UP4
+1445   860F             
+1446   860F             	; Test: If we are currently going LEFT or RIGHT then ignore
+1447   860F 57          	LD D, A
+1448   8610 78          	LD A, B		; Test HeroDX
+1449   8611 B7          	OR A
+1450   8612 7A          	LD A, D
+1451   8613 20 0A       	JR NZ, _UP4
+1452   8615             	
+1453   8615             	; Set to RIGHT
+1454   8615 06 01       	LD B, 1
+1455   8617 0E 00       	LD C, 0
+1456   8619             
+1457   8619 11 3A 89    	LD DE, SnakeRight
+1458   861C CD 96 86    	CALL DrawSnakeUDG
+1459   861F             	;JR _UP5
+1460   861F             
+1461   861F             	; LEFT?
+1462   861F 0F          _UP4:	RRCA
+1463   8620 30 10       	JR NC, _UP5
+1464   8622             
+1465   8622             	; Test: If we are currently going LEFT or RIGHT then ignore
+1466   8622 57          	LD D, A
+1467   8623 78          	LD A, B		; Test HeroDX
+1468   8624 B7          	OR A
+1469   8625 7A          	LD A, D
+1470   8626 20 0A       	JR NZ, _UP5
+1471   8628             	
+1472   8628             	; Set to LEFT
+1473   8628 06 FF       	LD B, -1
+1474   862A 0E 00       	LD C, 0
+1475   862C             
+1476   862C 11 4A 89    	LD DE, SnakeLeft
+1477   862F CD 96 86    	CALL DrawSnakeUDG
+1478   8632             	;JR _UP5
+1479   8632             
+1480   8632             
+1481   8632             _UP5:	; Save DX/DY back
+1482   8632 78          	LD A, B
+1483   8633 32 13 89    	LD (HeroDX), A
+1484   8636 79          	LD A, C
+1485   8637 32 14 89    	LD (HeroDY), A
+1486   863A             
+1487   863A             
+1488   863A             
+1489   863A             _UPAfterKeys:
+1490   863A             	; X += DX
+1491   863A 3A 11 89    	LD A, (HeroXPos)
+1492   863D 80          	ADD A, B
+1493   863E E6 7F       	AND RoomWidthMask
+1494   8640 32 11 89    	LD (HeroXPos), A
+1495   8643             
+1496   8643             	; Y += DY
+1497   8643 3A 12 89    	LD A, (HeroYPos)
+1498   8646 81          	ADD A, C
+1499   8647 E6 3F       	AND RoomHeightMask
+1500   8649 32 12 89    	LD (HeroYPos), A
+1501   864C             
+1502   864C C9          	RET
+1503   864D             	
+1504   864D             
+1505   864D             
+1506   864D             ; CharToHL
+1507   864D             ; Converts an ASCII character in A to a Character Table location in HL
+1508   864D             ; BC = Untouched
+1509   864D             CharToHL:
+1510   864D 6F          	LD L, A
+1511   864E 26 00       	LD H, 0
+1512   8650 29          	ADD HL, HL
+1513   8651 29          	ADD HL, HL
+1514   8652 29          	ADD HL, HL
+1515   8653 3A 36 5C    	LD A, (23606)
+1516   8656 5F          	LD E, A
+1517   8657 3A 37 5C    	LD A, (23607)
+1518   865A 57          	LD D, A
+1519   865B 19          	ADD HL, DE
+1520   865C C9          	RET
+1521   865D             	
+1522   865D             
+1523   865D             
+1524   865D             	.MODULE Damage
+1525   865D             
+1526   865D             ; The user has 32 damage during the level.  A damage point is lost
+1527   865D             ; for each block they hit.  The damage is reflected by a coloured bar
+1528   865D             ; at the bottom of the page.
+1529   865D             
+1530   865D             ;DamageLeft:	.byte 32	; 32 
+1531   865D             ;DamageHL:	.word 23295	; Attr End Pos
+1532   865D             
+1533   865D             ; TestDamage
+1534   865D             ; Tests the Hero's position on the Maze to see if there is a block
+1535   865D             ; there or not.  Reduces damage and update's damage bar if a hit occurs
+1536   865D             ; along with a sound effect.  Quits if damage reaches zero.
+1537   865D             ; DamageLeft goes from 32 to 0; DamageHL is the next AttrPos to make "black"
+1538   865D             TestDamage:
+1539   865D             
+1540   865D             	; Increment Score
+1541   865D 2A 20 89    	LD HL, (Score)
+1542   8660 23          	INC HL
+1543   8661 22 20 89    	LD (Score), HL
+1544   8664             	
+1545   8664             	; Get Memory Address from Hero Position
+1546   8664 2A 11 89    	LD HL, (HeroXPos)
+1547   8667 EB          	EX DE, HL
+1548   8668 CD 88 85    	CALL ConvertXYtoHL
+1549   866B             
+1550   866B             
+1551   866B             	; Sample Maze Position
+1552   866B 7E          	LD A, (HL)
+1553   866C FE 07       	CP RoomSpaceCol
+1554   866E             	
+1555   866E             	; OK?
+1556   866E C8          	RET Z
+1557   866F             	
+1558   866F             	; DAMAGE!!!!!
+1559   866F             	
+1560   866F             	; Reduce Damage (UI)
+1561   866F 2A 1A 89    	LD HL, (DamageHL)
+1562   8672 2B          	DEC HL
+1563   8673 36 18       	LD (HL), DamageBarGoneCol
+1564   8675 22 1A 89    	LD (DamageHL), HL
+1565   8678             	
+1566   8678             	; Play Sound Effect
+1567   8678 CD AB 86    	CALL SoundCrash
+1568   867B             
+1569   867B             	
+1570   867B             	; Reduce Damage (Count)
+1571   867B 3A 19 89    	LD A, (DamageLeft)
+1572   867E 3D          	DEC A
+1573   867F 32 19 89    	LD (DamageLeft), A
+1574   8682             	
+1575   8682             	; Test for Dead
+1576   8682 B7          	OR A
+1577   8683 C0          	RET NZ
+1578   8684             	
+1579   8684             	; DEAD!!!!!!!
+1580   8684             	
+1581   8684             	; Exit Program (returning score)
+1582   8684 E1          	POP HL	; Quit Level
+1583   8685 E1          	POP HL	; Quit Game
+1584   8686 ED 4B 20 89 	LD BC, (Score)
+1585   868A C9          	RET
+1586   868B             
+1587   868B             
+1588   868B             ; ClearSnakeUDG
+1589   868B             ClearSnakeUDG:
+1590   868B 21 D0 48    	LD HL, 16384 + 2048 + (6 * 32) + 16
+1591   868E 06 08       	LD B, 8
+1592   8690 AF          	XOR A
+1593   8691 77          _CSHLp:	LD (HL), A
+1594   8692 24          	INC H
+1595   8693 10 FC       	DJNZ _CSHLp
+1596   8695 C9          	RET
+1597   8696             	
+1598   8696             ; DrawSnakeUDG
+1599   8696             ; Based on the DX/DY values, we draw one of the 4 UDGs representing the SNAKE HEAD
+1600   8696             ; Graphic will be inverted as the snake head's blue colour is PAPER
+1601   8696             ; Input:
+1602   8696             ; 	DE = UDG Source Graphic
+1603   8696             ; (Registers must be preserved)
+1604   8696             DrawSnakeUDG:
+1605   8696 F5          	PUSH AF
+1606   8697 C5          	PUSH BC
+1607   8698 E5          	PUSH HL
+1608   8699 21 D0 48    	LD HL, 16384 + 2048 + (6 * 32) + 16
+1609   869C 06 08       	LD B, 8
+1610   869E 1A          _DSU1:	LD A, (DE)
+1611   869F ED 44       	NEG
+1612   86A1 3D          	DEC A
+1613   86A2 77          	LD (HL), A
+1614   86A3 24          	INC H
+1615   86A4 13          	INC DE
+1616   86A5 10 F7       	DJNZ _DSU1
+1617   86A7 E1          	POP HL
+1618   86A8 C1          	POP BC
+1619   86A9 F1          	POP AF
+1620   86AA C9          	RET
+1621   86AB             
+1622   86AB             ; SoundCrash
+1623   86AB             SoundCrash:
+1624   86AB 21 00 00    	LD HL, 0
+1625   86AE 0E FF       	LD C, 255
+1626   86B0 7E          _SC0:	LD A, (HL)
+1627   86B1 E6 17       	AND 7+16
+1628   86B3 ED 79       	OUT (C), A
+1629   86B5 47          	LD B, A
+1630   86B6 10 FE       _SC1:	DJNZ _SC1
+1631   86B8 23          	INC HL
+1632   86B9 0D          	DEC C
+1633   86BA 20 F4       	JR NZ, _SC0
+1634   86BC AF          	XOR A
+1635   86BD ED 79       	OUT (C), A
+1636   86BF C9          	RET
+1637   86C0             
+1638   86C0             ; SoundTimerTick
+1639   86C0             SoundTimerTick:
+1640   86C0 0E 19       	LD C, 25
+1641   86C2 3E 10       _STT0:	LD A, 16
+1642   86C4 ED 79       	OUT (C), A
+1643   86C6 06 04       	LD B, 4
+1644   86C8 10 FE       _STT1:	DJNZ _STT1
+1645   86CA AF          	XOR A
+1646   86CB ED 79       	OUT (C), A
+1647   86CD 06 20       	LD B, 32
+1648   86CF 10 FE       _STT2:	DJNZ _STT2
+1649   86D1 0D          	DEC C
+1650   86D2 20 EE       	JR NZ, _STT0
+1651   86D4 C9          	RET
+1652   86D5             	
+1653   86D5             
+1654   86D5             
+1655   86D5             
+1656   86D5             
+1657   86D5             	.MODULE Score
+1658   86D5             
+1659   86D5             ; InitLevel
+1660   86D5             InitLevel: 
+1661   86D5             	; Initialise Level to 1
+1662   86D5 3E 01       	LD A, 1
+1663   86D7 32 1F 89    	LD (Level), A
+1664   86DA C9          	RET
+1665   86DB             
+1666   86DB             ; UpdateLevel
+1667   86DB             ; Add 1 to the level
+1668   86DB             UpdateLevel:
+1669   86DB 21 1F 89    	LD HL, Level
+1670   86DE 34          	INC (HL)
+1671   86DF C9          	RET
+1672   86E0             
+1673   86E0             
+1674   86E0             ; InitScore
+1675   86E0             ; Set score to 0 including preparing the UI
+1676   86E0             InitScore:
+1677   86E0             	; Initialise Score to 0
+1678   86E0 21 00 00    	LD HL, 0
+1679   86E3 22 20 89    	LD (Score), HL
+1680   86E6 21 00 8B    	LD HL, Digit1		; Point to next digit to display (1)
+1681   86E9 22 22 89    	LD (ScoreHLs+0), HL
+1682   86EC 22 24 89    	LD (ScoreHLs+2), HL
+1683   86EF 22 26 89    	LD (ScoreHLs+4), HL
+1684   86F2 22 28 89    	LD (ScoreHLs+6), HL
+1685   86F5 22 2A 89    	LD (ScoreHLs+8), HL
+1686   86F8 C9          	RET
+1687   86F9             
+1688   86F9             
+1689   86F9             ; UpdateScore
+1690   86F9             ; Increments score and redraws to screen
+1691   86F9             UpdateScore:
+1692   86F9             
+1693   86F9             	; Increment score
+1694   86F9 21 20 89    	LD HL, Score
+1695   86FC 34          	INC (HL)
+1696   86FD             	
+1697   86FD             	; Need to update digits
+1698   86FD 21 24 40    	LD HL, 16384 + 32 + 4		; Screen address of units digit
+1699   8700 DD 21 22 89 	LD IX, ScoreHLs			; Array of 5 Pointers to characters
+1700   8704 06 05       	LD B, 5				; 5 digits
+1701   8706 0E 50       	LD C, (DigitEnd & 0FFh)		; Limit (only need to test E and C)
+1702   8708             	
+1703   8708 DD 5E 00    _US0:	LD E, (IX+0)
+1704   870B DD 56 01    	LD D, (IX+1)
+1705   870E             
+1706   870E CD D9 87    	CALL PrintCharAtDE
+1707   8711             	
+1708   8711             	; Does DE = BC?
+1709   8711 7B          	LD A, E
+1710   8712 B9          	CP C	
+1711   8713 20 12       	JR NZ, _US1
+1712   8715             
+1713   8715             	; Move back to "0"
+1714   8715 11 00 8B    	LD DE, Digit1
+1715   8718             	
+1716   8718             	; Write back
+1717   8718 DD 73 00    	LD (IX+0), E
+1718   871B DD 72 01    	LD (IX+1), D
+1719   871E 2D          	DEC L		; Move to PREVIOUS address on screen (PrintCharAtDE incremented it!)
+1720   871F 2D          	DEC L
+1721   8720 DD 23       	INC IX		; Move to next pointer
+1722   8722 DD 23       	INC IX
+1723   8724 10 E2       	DJNZ _US0
+1724   8726 C9          	RET		; Looped the score!!!
+1725   8727             
+1726   8727             	
+1727   8727             	; Write back and exit
+1728   8727 DD 73 00    _US1:	LD (IX+0), E
+1729   872A DD 72 01    	LD (IX+1), D
+1730   872D C9          	RET	
+1731   872E             
+1732   872E             	
+1733   872E             ; InitTimer
+1734   872E             ; Set Timer to full including preparing the UI
+1735   872E             InitTimer:
+1736   872E             
+1737   872E             	; Count Down
+1738   872E 3E 1B       	LD A, 32-5
+1739   8730 32 1C 89    	LD (TimerLeft), A
+1740   8733             	
+1741   8733             	; Pointer to UI
+1742   8733 21 40 58    	LD HL, 22528+64
+1743   8736 22 1D 89    	LD (TimerHL), HL
+1744   8739             	
+1745   8739             	; Sub Count
+1746   8739 3A 2C 89    	LD A, (TimerLoReset)
+1747   873C 32 2D 89    	LD (TimerLo), A
+1748   873F             
+1749   873F             	; Draw UI
+1750   873F 21 25 58    	LD HL, 22528+32+5
+1751   8742 11 26 58    	LD DE, 22528+32+6
+1752   8745 01 1A 00    	LD BC, 32-6
+1753   8748 36 60       	LD (HL), TimerBarCol
+1754   874A ED B0       	LDIR
+1755   874C             
+1756   874C C9          	RET
+1757   874D             
+1758   874D             ; UpdateTimer
+1759   874D             UpdateTimer:
+1760   874D             	; Decrement the SubTimer
+1761   874D 3A 2D 89    	LD A, (TimerLo)
+1762   8750 3D          	DEC A
+1763   8751 32 2D 89    	LD (TimerLo), A
+1764   8754 C0          	RET NZ
+1765   8755             
+1766   8755             	; Reset SubTime
+1767   8755 3A 2C 89    	LD A, (TimerLoReset)
+1768   8758 32 2D 89    	LD (TimerLo), A
+1769   875B             
+1770   875B             
+1771   875B             	; Reduce Timer (UI)
+1772   875B 2A 1D 89    	LD HL, (TimerHL)
+1773   875E 2B          	DEC HL
+1774   875F 36 20       	LD (HL), TimerBarGoneCol
+1775   8761 22 1D 89    	LD (TimerHL), HL
+1776   8764             	
+1777   8764             	; Play Sound Effect
+1778   8764 CD C0 86    	CALL SoundTimerTick
+1779   8767             	
+1780   8767             	; Reduce Damage (Count)
+1781   8767 3A 1C 89    	LD A, (TimerLeft)
+1782   876A 3D          	DEC A
+1783   876B 32 1C 89    	LD (TimerLeft), A
+1784   876E             	
+1785   876E             	; Test for Level Complete
+1786   876E B7          	OR A
+1787   876F C9          	RET	; Z = Complete;
+1788   8770             
+1789   8770             
+1790   8770             ; InitDamage
+1791   8770             ; Set Damage to full including preparing the UI
+1792   8770             InitDamage:
+1793   8770             	; Initialise Damage
+1794   8770 3E 1B       	LD A, 32-5
+1795   8772 32 19 89    	LD (DamageLeft), A
+1796   8775 21 20 58    	LD HL, 22528+32
+1797   8778 22 1A 89    	LD (DamageHL), HL
+1798   877B C9          	RET
+1799   877C             
+1800   877C             
+1801   877C             
+1802   877C             
+1803   877C             
+1804   877C             
+1805   877C             	.MODULE HalfText
+1806   877C             ; Displays a message to the screen spanning between two lines
+1807   877C             ; Great for colour effects
+1808   877C             
+1809   877C             ; PrintHalfMsg
+1810   877C             ; IX = Message to display
+1811   877C             ; HL = Screen address to display message (must be 4 pixels into the cell)
+1812   877C             PrintHalfMsg:
+1813   877C             	
+1814   877C             	; Force HL to be 4 characters down into the character cell
+1815   877C 7C          	LD A, H
+1816   877D F6 04       	OR  00000100b
+1817   877F E6 FC       	AND 11111100b
+1818   8781 67          	LD H, A
+1819   8782             
+1820   8782             
+1821   8782             	; Get Next Character 
+1822   8782 DD 7E 00    _PHM0:	LD A, (IX)
+1823   8785 DD 23       	INC IX
+1824   8787             
+1825   8787             	; End if string?
+1826   8787 A7          	AND A	
+1827   8788 C8          	RET Z
+1828   8789             	
+1829   8789 CD 8E 87    	CALL PrintHalfChar
+1830   878C 18 F4       	JR _PHM0
+1831   878E             	
+1832   878E             
+1833   878E             ; PrintHalfChar
+1834   878E             ; Prints ASCII character A at screen position held in HL.
+1835   878E             ; Returns with HL incremented
+1836   878E             PrintHalfChar:
+1837   878E             	
+1838   878E             	; Convert A to Character Source Address in DE
+1839   878E E5          	PUSH HL
+1840   878F CD 4D 86    	CALL CharToHL
+1841   8792 EB          	EX DE, HL	; Put Source in DE
+1842   8793 E1          	POP HL
+1843   8794             	
+1844   8794 E5          	PUSH HL
+1845   8795 1A          	LD A, (DE)
+1846   8796 77          	LD (HL), A
+1847   8797 24          	INC H
+1848   8798 13          	INC DE
+1849   8799             
+1850   8799 1A          	LD A, (DE)
+1851   879A 77          	LD (HL), A
+1852   879B 24          	INC H
+1853   879C 13          	INC DE
+1854   879D             
+1855   879D 1A          	LD A, (DE)
+1856   879E 77          	LD (HL), A
+1857   879F 24          	INC H
+1858   87A0 13          	INC DE
+1859   87A1             
+1860   87A1 1A          	LD A, (DE)
+1861   87A2 77          	LD (HL), A
+1862   87A3 24          	STEPDOWN	; Cross Character Boundary Here
+1862   87A4 7C          
+1862   87A5 E6 07       
+1862   87A7 20 0A       
+1862   87A9 7D          
+1862   87AA C6 20       
+1862   87AC 6F          
+1862   87AD 38 04       
+1862   87AF 7C          
+1862   87B0 D6 08       
+1862   87B2 67          
+1863   87B3 13          	INC DE
+1864   87B4             
+1865   87B4 1A          	LD A, (DE)
+1866   87B5 77          	LD (HL), A
+1867   87B6 24          	INC H
+1868   87B7 13          	INC DE
+1869   87B8             
+1870   87B8 1A          	LD A, (DE)
+1871   87B9 77          	LD (HL), A
+1872   87BA 24          	INC H
+1873   87BB 13          	INC DE
+1874   87BC             
+1875   87BC 1A          	LD A, (DE)
+1876   87BD 77          	LD (HL), A
+1877   87BE 24          	INC H
+1878   87BF 13          	INC DE
+1879   87C0             
+1880   87C0 1A          	LD A, (DE)
+1881   87C1 77          	LD (HL), A
+1882   87C2 24          	INC H
+1883   87C3 13          	INC DE
+1884   87C4             
+1885   87C4 E1          	POP HL
+1886   87C5 2C          	INC L
+1887   87C6 C9          	RET
+1888   87C7             
+1889   87C7             
+1890   87C7             
+1891   87C7             	.MODULE FastText
+1892   87C7             ; Displays a message to the screen without using the OS
+1893   87C7             
+1894   87C7             
+1895   87C7             ; PrintMessage
+1896   87C7             ; IX = Message to display
+1897   87C7             ; HL = Screen address to display message
+1898   87C7             PrintMessage:
+1899   87C7             
+1900   87C7             	; Get Next Character 
+1901   87C7 DD 7E 00    _PM0:	LD A, (IX)
+1902   87CA DD 23       	INC IX
+1903   87CC             
+1904   87CC             	; End if string?
+1905   87CC A7          	AND A	
+1906   87CD C8          	RET Z
+1907   87CE             	
+1908   87CE CD D3 87    	CALL PrintChar
+1909   87D1 18 F4       	JR _PM0	
+1910   87D3             
+1911   87D3             
+1912   87D3             ; PrintChar
+1913   87D3             ; Prints ASCII character A at screen position held in HL.
+1914   87D3             ; Returns with HL incremented
+1915   87D3             PrintChar:
+1916   87D3             	
+1917   87D3             	; Convert A to Character Source Address in DE
+1918   87D3 E5          	PUSH HL
+1919   87D4 CD 4D 86    	CALL CharToHL
+1920   87D7 EB          	EX DE, HL	; Put Source in DE
+1921   87D8 E1          	POP HL
+1922   87D9             	
+1923   87D9             PrintCharAtDE:
+1924   87D9 1A          	LD A, (DE)
+1925   87DA 77          	LD (HL), A
+1926   87DB 24          	INC H
+1927   87DC 13          	INC DE
+1928   87DD             
+1929   87DD 1A          	LD A, (DE)
+1930   87DE 77          	LD (HL), A
+1931   87DF 24          	INC H
+1932   87E0 13          	INC DE
+1933   87E1             
+1934   87E1 1A          	LD A, (DE)
+1935   87E2 77          	LD (HL), A
+1936   87E3 24          	INC H
+1937   87E4 13          	INC DE
+1938   87E5             
+1939   87E5 1A          	LD A, (DE)
+1940   87E6 77          	LD (HL), A
+1941   87E7 24          	INC H
+1942   87E8 13          	INC DE
+1943   87E9             
+1944   87E9 1A          	LD A, (DE)
+1945   87EA 77          	LD (HL), A
+1946   87EB 24          	INC H
+1947   87EC 13          	INC DE
+1948   87ED             
+1949   87ED 1A          	LD A, (DE)
+1950   87EE 77          	LD (HL), A
+1951   87EF 24          	INC H
+1952   87F0 13          	INC DE
+1953   87F1             
+1954   87F1 1A          	LD A, (DE)
+1955   87F2 77          	LD (HL), A
+1956   87F3 24          	INC H
+1957   87F4 13          	INC DE
+1958   87F5             
+1959   87F5 1A          	LD A, (DE)
+1960   87F6 77          	LD (HL), A
+1961   87F7 24          	INC H
+1962   87F8 13          	INC DE
+1963   87F9             
+1964   87F9 7C          	LD A, H
+1965   87FA D6 08       	SUB 8
+1966   87FC 67          	LD H, A
+1967   87FD 2C          	INC L
+1968   87FE C9          	RET
+1969   87FF             
+1970   87FF             
+1971   87FF             
+1972   87FF             	.MODULE KeyboardScanning
+1973   87FF             
+1974   87FF             
+1975   87FF             ScanGameKeys:
+1976   87FF 21 B0 88    	LD HL, InputScanData	; This is where the CURRENT keyboard/joystick port is
+1977   8802 11 00 05    	LD DE, 5*256			; D = # Keys; E = Result
+1978   8805             _SGK0:	
+1979   8805 4E          	LD C, (HL)				; PORT (low)
+1980   8806 23          	INC HL	
+1981   8807 46          	LD B, (HL)				; PORT (high)
+1982   8808 23          	INC HL	
+1983   8809 ED 78       	IN A, (C)
+1984   880B A6          	AND (HL)				; BIT POSITION MASK
+1985   880C 23          	INC HL
+1986   880D             	
+1987   880D 28 03       	JR Z, _SGK1				; ? KEY PRESS / JOYSTICK NOT PRESSED?
+1988   880F 37          	SCF
+1989   8810 18 01       	JR _SGK2
+1990   8812 AF          _SGK1:	XOR A
+1991   8813             
+1992   8813 CB 13       _SGK2:	RL E				; SHIFT RESULT INTO E
+1993   8815             
+1994   8815 15          	DEC D
+1995   8816 20 ED       	JR NZ, _SGK0			; MOVE TO NEXT KEY
+1996   8818             	
+1997   8818             	; Negate?
+1998   8818 7E          	LD A, (HL)				; NEGATIVE FLAG...
+1999   8819 B7          	OR A
+2000   881A 7B          	LD A, E					; Copy Result to A
+2001   881B 28 02       	JR Z, _SGK3
+2002   881D EE 1F       	XOR 31					; Negate
+2003   881F 32 00 89    _SGK3:	LD (KeyData), A		; Store
+2004   8822 C9          	RET
+2005   8823             
+2006   8823             
+2007   8823             
+2008   8823             	.MODULE BigText
+2009   8823             
+2010   8823             
+2011   8823             
+2012   8823             ; DisplayMessage
+2013   8823             ; Displayes the message pointed to by HL to the screen in the
+2014   8823             ; form of a scrolly
+2015   8823             ; Input:
+2016   8823             ;	IX = Points to message
+2017   8823             ; Returns:
+2018   8823             ;	Z Flag Reset = User pressed a key to terminate early
+2019   8823             DisplayMessage:
+2020   8823             
+2021   8823             	; Get Next Character 
+2022   8823 DD 7E 00    _DM0:	LD A, (IX)
+2023   8826 A7          	AND A	; CP 0
+2024   8827 28 32       	JR Z, DM_ScrollEnd
+2025   8829 FE 20       	CP 32	; CP ' '
+2026   882B 28 1F       	JR Z, DM_ScrollSpace
+2027   882D             	
+2028   882D             	; Find location in Font Table
+2029   882D             	; HL points to Font Character
+2030   882D CD 4D 86    	CALL CharToHL
+2031   8830             
+2032   8830             	; Copy Character into writable area	
+2033   8830 11 52 89    	LD DE, ScrollCharBuf
+2034   8833 01 08 00    	LD BC, 8
+2035   8836 ED B0       	LDIR
+2036   8838             
+2037   8838             	; For each vertical pixel...
+2038   8838             _DM1
+2039   8838 CD 76 88    	CALL DM_KeyPress	; Test key press if required
+2040   883B C0          	RET NZ			; Quit if Key Pressed
+2041   883C             	
+2042   883C 76          	HALT
+2043   883D CD 7F 88    	CALL DM_Scroll
+2044   8840 CD 92 88    	CALL DM_FillRight
+2045   8843 CD 6A 88    	CALL DM_TestEmptyBuffer
+2046   8846 20 F0       	JR NZ, _DM1
+2047   8848             	
+2048   8848             _DMNextChar:
+2049   8848 DD 23       	INC IX
+2050   884A 18 D7       	JR _DM0
+2051   884C             
+2052   884C             DM_ScrollSpace:
+2053   884C 06 08       	LD B, 8
+2054   884E C5          _DM12:	PUSH BC
+2055   884F 76          	HALT
+2056   8850 CD 7F 88    	CALL DM_Scroll
+2057   8853 CD 92 88    	CALL DM_FillRight
+2058   8856 C1          	POP BC
+2059   8857 10 F5       	DJNZ _DM12
+2060   8859 18 ED       	JR _DMNextChar
+2061   885B             
+2062   885B             ; DM_ScrollEnd
+2063   885B             ; Scrolls off the rest of the message
+2064   885B             DM_ScrollEnd:
+2065   885B             
+2066   885B 06 20       	LD B, 32
+2067   885D 76          _DM2	HALT
+2068   885E C5          	PUSH BC
+2069   885F CD 7F 88    	CALL DM_Scroll
+2070   8862 CD 92 88    	CALL DM_FillRight
+2071   8865 C1          	POP BC
+2072   8866 10 F5       	DJNZ _DM2
+2073   8868 AF          	XOR A			; Set Z Flag
+2074   8869 C9          	RET
+2075   886A             
+2076   886A             ; DM_TestEmptyBuffer:
+2077   886A             ; Tests to see if the ScrollCharBuf contains
+2078   886A             ; all empty values
+2079   886A             ; Returns:
+2080   886A             ;	ZF Set if all empty
+2081   886A             ;	ZF Reset if pixels left
+2082   886A             DM_TestEmptyBuffer:
+2083   886A 21 52 89    	LD HL, ScrollCharBuf
+2084   886D AF          	XOR A
+2085   886E 06 08       	LD B, 8
+2086   8870             _DM_Loop5:
+2087   8870 B6          	OR (HL)
+2088   8871 23          	INC HL
+2089   8872 10 FC       	DJNZ _DM_Loop5
+2090   8874 A7          	AND A
+2091   8875 C9          	RET
+2092   8876             
+2093   8876             
+2094   8876             ; DM_KeyPress
+2095   8876             ; Tests if user has pressed a key (to exit scrolly).  Only applies if
+2096   8876             ; Bit 0 of ScrollFlags is set
+2097   8876             ; Returns:
+2098   8876             ;	Z Flag: Set = Continue Scrolling; Reset = Quit Scroll
+2099   8876             ;	ZF=1	Exit Scrolly
+2100   8876             DM_KeyPress:
+2101   8876             
+2102   8876 3A 5C 89    	LD A, (ScrollFlags)
+2103   8879 E6 01       	AND 1
+2104   887B C8          	RET Z	; Continue Scroll
+2105   887C             	
+2106   887C C3 A3 80    	JP TestKeyPress; Returns Z Flag set if no key pressed and continue scroll
+2107   887F             
+2108   887F             
+2109   887F             ; DM_Scroll
+2110   887F             ; Scrolls middle 8 attribute rows to the left 1 leaving
+2111   887F             ; the right most column unaffected
+2112   887F             DM_Scroll:
+2113   887F 3E 08       	LD A, 8
+2114   8881 21 01 59    	LD HL, 22528 + (8 * 32) + 1
+2115   8884 11 00 59    	LD DE, 22528 + (8 * 32)
+2116   8887 01 1F 00    _DM14:	LD BC, 31
+2117   888A ED B0       	LDIR
+2118   888C 2C          	INC L	; Leave Right Most Column alone
+2119   888D 1C          	INC E
+2120   888E 3D          	DEC A
+2121   888F 20 F6       	JR NZ, _DM14
+2122   8891 C9          	RET 
+2123   8892             	
+2124   8892             ; DM_FillRight
+2125   8892             ; Fills right column with pixels from ScrollCharBuf
+2126   8892             DM_FillRight:
+2127   8892 06 08       	LD B, 8
+2128   8894 21 52 89    	LD HL, ScrollCharBuf
+2129   8897 11 1F 59    	LD DE, 22528 + (8 * 32) + 31
+2130   889A             _DMFRLoop:
+2131   889A AF          	XOR A
+2132   889B CB 16       	RL (HL)
+2133   889D 30 08       	JR NC, _DMFRSkip	; Empty pixel
+2134   889F 78          	LD A, B
+2135   88A0 B7          	OR A
+2136   88A1 20 01       	JR NZ, _DMFRSkip2
+2137   88A3 3C          	INC A
+2138   88A4             _DMFRSkip2:
+2139   88A4 17          	RLA
+2140   88A5 17          	RLA
+2141   88A6 17          	RLA		; Turn Row into Paper
+2142   88A7             _DMFRSkip:
+2143   88A7 12          	LD (DE), A
+2144   88A8 23          	INC HL
+2145   88A9 3E 20       	LD A, 32
+2146   88AB 83          	ADD A, E
+2147   88AC 5F          	LD E, A
+2148   88AD 10 EB       	DJNZ _DMFRLoop
+2149   88AF C9          	RET
+2150   88B0             
+2151   88B0             
+2152   88B0             
+2153   88B0             
+2154   88B0             
+2155   88B0             
+2156   88B0             
+2157   88B0             
+2158   88B0             
+2159   88B0             
+2160   88B0             	.MODULE KeyboardData
+2161   88B0             	
+2162   88B0             
+2163   88B0             
+2164   88B0             
+2165   88B0             			; BIT	: 0    1   2  3  4 	B  C
+2166   88B0             			; NUM   : 1    2   4  8  16
+2167   88B0             			; ------; ----------------	-----
+2168   88B0             KeyPortCSV	.equ 65278	; cap  Z   X  C  V	FE FE
+2169   88B0             KeyPortAG	.equ 65022	; A    S   D  F  G  	FD FE
+2170   88B0             KeyPortQT	.equ 64510	; Q    W   E  R  T	FB FE
+2171   88B0             KeyPort15	.equ 63486	; 1    2   3  4  5	F7 FE
+2172   88B0             KeyPort06	.equ 61438	; 0    9   8  7  6	EF FE
+2173   88B0             KeyPortPY	.equ 57342	; P    O   I  U  Y	DF FE
+2174   88B0             KeyPortENTH	.equ 49150	; ent  L   K  J  H	BF FE
+2175   88B0             KeyPortSPB	.equ 32766	; spc  sym M  N  B	7F FE
+2176   88B0             
+2177   88B0             KempstonPort	.equ 31
+2178   88B0             
+2179   88B0             
+2180   88B0             ; KEYBOARD / JOYSTICK TABLE
+2181   88B0             ; Each Block comprises of an entry for each input mechanism
+2182   88B0             ; Each Block contains 15 bytes for LEFT, RIGHT, UP, DOWN and FIRE
+2183   88B0             ; Order of entries are : { LEFT RIGHT DOWN UP FIRE } 
+2184   88B0             ; Where each key is a 2 byte PORT and a 1 byte MASK
+2185   88B0             ; A Neg Flag is used to determine whether to negate the msak or not
+2186   88B0             InputScanData:
+2187   88B0             
+2188   88B0             ; The CURRENT ACTION KEYS 
+2189   88B0             ; (copy of one of the following entries)
+2190   88B0             
+2191   88B0 FE DF       		.word KeyPortPY	; LEFT  = 'O'
+2192   88B2 02          		.byte 2
+2193   88B3 FE DF       		.word KeyPortPY	; RIGHT = 'P'
+2194   88B5 01          		.byte 1
+2195   88B6 FE FD       		.word KeyPortAG	; DOWN  = 'A'
+2196   88B8 01          		.byte 1
+2197   88B9 FE FB       		.word KeyPortQT	; UP    = 'Q'
+2198   88BB 01          		.byte 1
+2199   88BC FE 7F       		.word KeyPortSPB; FIRE  = 'space'
+2200   88BE 01          		.byte 1
+2201   88BF             		
+2202   88BF 01          		.byte 1		; Negative = True
+2203   88C0             
+2204   88C0             
+2205   88C0             ; KEYBOARD (OAOP SPACE)
+2206   88C0             
+2207   88C0 FE DF       		.word KeyPortPY	; LEFT  = 'O'
+2208   88C2 02          		.byte 2
+2209   88C3 FE DF       		.word KeyPortPY	; RIGHT = 'P'
+2210   88C5 01          		.byte 1
+2211   88C6 FE FD       		.word KeyPortAG	; DOWN  = 'A'
+2212   88C8 01          		.byte 1
+2213   88C9 FE FB       		.word KeyPortQT	; UP    = 'Q'
+2214   88CB 01          		.byte 1
+2215   88CC FE 7F       		.word KeyPortSPB; FIRE  = 'space'
+2216   88CE 01          		.byte 1
+2217   88CF             		
+2218   88CF 01          		.byte 1		; Negative = True
+2219   88D0             
+2220   88D0             ; KEMPSTON JOYSTICK
+2221   88D0             
+2222   88D0 1F 00       		.word KempstonPort 	; LEFT
+2223   88D2 02          		.byte 2
+2224   88D3 1F 00       		.word KempstonPort	; RIGHT
+2225   88D5 01          		.byte 1
+2226   88D6 1F 00       		.word KempstonPort	; DOWN
+2227   88D8 04          		.byte 4
+2228   88D9 1F 00       		.word KempstonPort	; UP
+2229   88DB 08          		.byte 8
+2230   88DC 1F 00       		.word KempstonPort	; FIRE
+2231   88DE 10          		.byte 16
+2232   88DF             		
+2233   88DF 00          		.byte 0		; Negative = False
+2234   88E0             
+2235   88E0             ; CURSOR KEYS
+2236   88E0             
+2237   88E0 FE F7       		.word KeyPort15	; LEFT  = '5'
+2238   88E2 10          		.byte 16
+2239   88E3 FE EF       		.word KeyPort06	; RIGHT = '8'
+2240   88E5 04          		.byte 4
+2241   88E6 FE EF       		.word KeyPort06	; DOWN  = '6'
+2242   88E8 10          		.byte 16
+2243   88E9 FE EF       		.word KeyPort06	; UP    = '7'
+2244   88EB 08          		.byte 8
+2245   88EC FE EF       		.word KeyPort06	; FIRE  = '0'
+2246   88EE 01          		.byte 1
+2247   88EF             		
+2248   88EF 01          		.byte 1		; Negative = True
+2249   88F0             
+2250   88F0             
+2251   88F0             
+2252   88F0             ; INTERFACE 2
+2253   88F0             
+2254   88F0 FE EF       		.word KeyPort06	; LEFT  = '6'
+2255   88F2 10          		.byte 16
+2256   88F3 FE EF       		.word KeyPort06	; RIGHT = '7'
+2257   88F5 08          		.byte 8
+2258   88F6 FE EF       		.word KeyPort06	; DOWN  = '8'
+2259   88F8 04          		.byte 4
+2260   88F9 FE EF       		.word KeyPort06	; UP    = '9'
+2261   88FB 02          		.byte 2
+2262   88FC FE EF       		.word KeyPort06	; FIRE  = '0'
+2263   88FE 01          		.byte 1
+2264   88FF             		
+2265   88FF 01          		.byte 1		; Negative = True
+2266   8900             
+2267   8900             
+2268   8900             
+2269   8900             ; KeyData
+2270   8900             ; This holds the keypress combination
+2271   8900             ; and is set by calling ScanGameKeys
+2272   8900             ; Bit 0 = FIRE
+2273   8900             ; Bit 1 = UP
+2274   8900             ; Bit 2 = DOWN
+2275   8900             ; Bit 3 = RIGHT
+2276   8900             ; Bit 4 = LEFT
+2277   8900 00          KeyData:		.byte 0
+2278   8901             
+2279   8901             
+2280   8901             ; SnakeHeadBuffer
+2281   8901             ; This is a history list of the last 8 Maze positions
+2282   8901             ; that the head has been in.  Each frame, the newest
+2283   8901             ; position is placed into index [0] and [0] is moved
+2284   8901             ; into [1] and [1] into [2] etc.
+2285   8901             ; At the same time, the memory positions are painted
+2286   8901             ; with a increasingly faded colour
+2287   8901 000000000000SnakeHeadBuffer:	.word 0,0,0,0,0,0,0,0
+2287   8907 00000000000000000000
+2288   8911             SnakeHeadBufferLen:	.equ 8
+2289   8911             	
+2290   8911             	
+2291   8911             	.MODULE DataSection
+2292   8911             
+2293   8911             
+2294   8911             RoomBuffer:	.equ 49152
+2295   8911             RoomWidth:	.equ 128	; Must be a power of two (update ConvertXYtoHL accordingly)
+2296   8911             RoomHeight:	.equ 64		; Must be a power of two
+2297   8911             RoomWidthMask:	.equ RoomWidth-1	; MOD mask
+2298   8911             RoomHeightMask:	.equ RoomHeight-1	; MOD mask
+2299   8911             
+2300   8911             RoomBufSize:	.equ RoomWidth * RoomHeight
+2301   8911             RoomSpaceCol:	.equ 7		; Black (white Ink)
+2302   8911             RoomWallCol:	.equ 22		; Red   (yellow Ink)
+2303   8911             
+2304   8911             ScoreBarCol:		.equ 16		; Red   (black ink)
+2305   8911             DamageBarCol:		.equ 24+64	; Magenta (black ink)
+2306   8911             TimerBarCol:		.equ 32+64	; Green (black ink)
+2307   8911             DamageBarGoneCol: 	.equ 24		; Green (black ink)
+2308   8911             TimerBarGoneCol:	.equ 32		; Green (black ink)
+2309   8911             
+2310   8911 08          HeroXPos:	.byte 8		; Position of Hero in maze (0..RoomWidth-1)
+2311   8912 08          HeroYPos:	.byte 8		; Position of Hero in maze (0..RoomHeight-1)
+2312   8913 01          HeroDX:		.byte 1		; Direction of Hero in X (0,1,-1)
+2313   8914 00          HeroDY:		.byte 0		; Direction of Hero in Y (0,1,-1)
+2314   8915             
+2315   8915 00          ScreenXPos:	.byte 0		; Position of Top Left Screen Attr in maze (0..RoomWidth-1)
+2316   8916 00          ScreenYPos:	.byte 0		; Position of Top Left Screen Attr in maze (0..RoomHeight-1)
+2317   8917 00 00       ScreenHL:	.word 0		; Memory address of Top Left Screen Attr in maze
+2318   8919             
+2319   8919             
+2320   8919 1B          DamageLeft:	.byte 32-5	; 
+2321   891A 00 00       DamageHL:	.word 0		; Attr End Pos (22528+5)
+2322   891C             
+2323   891C 1B          TimerLeft:	.byte 32-5	; 
+2324   891D 00 00       TimerHL:	.word 0		; Attr End Pos (22528+5+32)
+2325   891F             
+2326   891F 00          Level:		.byte 0		; Level (in DDA mode)
+2327   8920 00 00       Score:		.word 0		; 
+2328   8922 000000000000ScoreHLs:	.word 0,0,0,0,0	; Each digit points to address of CHAR 0 in rom , increments etc.. 
+2328   8928 00000000
+2329   892C 18          TimerLoReset:	.byte 24	; 
+2330   892D 00          TimerLo:	.byte 0
+2331   892E             
+2332   892E 00 00       Seed:		.word 0		; For Pseudo Random Number Generator
+2333   8930             
+2334   8930 00 00       ScratchHL:	.word 0		; Temporary Value
+2335   8932             
+2336   8932             ; User Defined Graphics...
+2337   8932 003C7E7EFFFFSnakeUp:	.byte 0, 60, 126, 126, 255, 255, 255, 255
+2337   8938 FFFF
+2338   893A F0FEFFFFFFFFSnakeRight:	.byte 240, 254, 255, 255, 255, 255, 254, 240
+2338   8940 FEF0
+2339   8942 FFFFFFFF7E7ESnakeDown:	.byte 255, 255, 255, 255, 126, 126, 60, 0
+2339   8948 3C00
+2340   894A 0F3F7F7F7F7FSnakeLeft:	.byte 15, 63, 127, 127, 127, 127, 63, 15
+2340   8950 3F0F
+2341   8952             
+2342   8952             StartPosition:
+2343   8952             
+2344   8952             ; Message Data
+2345   8952 000000000000ScrollCharBuf:	.byte 0,0,0,0,0,0,0,0	; Holds character being scrolled
+2345   8958 0000
+2346   895A 5D 89       ScrollCallBack:	.word DefaultCallBack	; Point to default return
+2347   895C 00          ScrollFlags:	.byte 0	; Bit 0: If set, will test for keypress each frame and quit if true
+2348   895D             
+2349   895D C9          DefaultCallBack: RET	; Return!
+2350   895E             
+2351   895E 57656C636F6DWelcomeMsg:	.text "Welcome to 'Knot in 2D' (machine code edition).  "
+2351   8964 6520746F20274B6E6F7420696E2032442720286D616368696E6520636F64652065646974696F6E292E2020
+2352   898F 435353434743		.text "CSSCGC 2009 entry by BloodBaz.  "
+2352   8995 203230303920656E74727920627920426C6F6F6442617A2E2020
+2353   89AF 466F72207265		.text "For refunds, email chris.walsh@zxlife.net.  "
+2353   89B5 66756E64732C20656D61696C2063687269732E77616C7368407A786C6966652E6E65742E2020
+2354   89DB 4B6579733A20		.text "Keys: QAOP.  "
+2354   89E1 51414F502E2020
+2355   89E8 496E73747275		.text "Instructions: Tie a knot in the 2D space, avoiding the string "
+2355   89EE 6374696F6E733A205469652061206B6E6F7420696E207468652032442073706163652C2061766F6964696E672074686520737472696E6720
+2356   8A26 616E64207768		.text "and whatever."
+2356   8A2C 6174657665722E
+2357   8A33 00          		.byte 0
+2358   8A34             
+2359   8A34 4C6576656C20LevelXXMsg:	.text "Level "
+2360   8A3A 30 30       LevelXXMsg2:	.text "00"
+2361   8A3C 00          		.byte 0
+2362   8A3D             
+2363   8A3D             LevelEndMsg00:	.equ $+6
+2364   8A3D 4C4556454C20LevelEndMsg1:	.text "LEVEL ?? CLEARED"	; 16 chars.  Offset = 8
+2364   8A43 3F3F20434C4541524544
+2365   8A4D 00          		.byte 0
+2366   8A4E             
+2367   8A4E             LevelEndMsg01:	.equ $+13
+2368   8A4E             LevelEndMsg02:	.equ $+23
+2369   8A4E 44414D414745LevelEndMsg2:	.text "DAMAGE BONUS ?? x 10 = ??0"; 26 chars.  Offset = 3
+2369   8A54 20424F4E5553203F3F2078203130203D203F3F30
+2370   8A68 00          		.byte 0
+2371   8A69             
+2372   8A69             LevelEndMsg03:	.equ $+6
+2373   8A69             LevelEndMsg04:	.equ $+8
+2374   8A69 53434F524520LevelEndMsg3:	.text "SCORE ?????"			; 11 chars.  Offset = 10
+2374   8A6F 3F3F3F3F3F
+2375   8A74 00          		.byte 0
+2376   8A75             
+2377   8A75 507265737320LevelEndMsg4:	.text "Press any key to continue..."			; 28 chars.  Offset = 2
+2377   8A7B 616E79206B657920746F20636F6E74696E75652E2E2E
+2378   8A91 00          		.byte 0
+2379   8A92             
+2380   8A92             
+2381   8A92             
+2382   8A92             		; Move to a 256 boundary
+2383   8A92             		
+2384   8B00             		.org  (($ + 0FFh) & 0FF00h)
+2385   8B00             
+2386   8B00 001828080808Digit1:		.byte 00h, 18h, 28h, 08h, 08h, 08h, 3Eh, 00h	; 1
+2386   8B06 3E00
+2387   8B08 003C42023C40Digit2:		.byte 00h, 3Ch, 42h, 02h, 3Ch, 40h, 7Eh, 00h	; 2
+2387   8B0E 7E00
+2388   8B10 003C420C0242Digit3:		.byte 00h, 3Ch, 42h, 0Ch, 02h, 42h, 3Ch, 00h	; 3
+2388   8B16 3C00
+2389   8B18 00081828487EDigit4:		.byte 00h, 08h, 18h, 28h, 48h, 7Eh, 08h, 00h	; 4
+2389   8B1E 0800
+2390   8B20 007E407C0242Digit5:		.byte 00h, 7Eh, 40h, 7Ch, 02h, 42h, 3Ch, 00h	; 5
+2390   8B26 3C00
+2391   8B28 003C407C4242Digit6:		.byte 00h, 3Ch, 40h, 7Ch, 42h, 42h, 3Ch, 00h	; 6
+2391   8B2E 3C00
+2392   8B30 007E02040810Digit7:		.byte 00h, 7Eh, 02h, 04h, 08h, 10h, 10h, 00h	; 7
+2392   8B36 1000
+2393   8B38 003C423C4242Digit8:		.byte 00h, 3Ch, 42h, 3Ch, 42h, 42h, 3Ch, 00h	; 8
+2393   8B3E 3C00
+2394   8B40 003C42423E02Digit9:		.byte 00h, 3Ch, 42h, 42h, 3Eh, 02h, 3Ch, 00h	; 9
+2394   8B46 3C00
+2395   8B48 003C464A5262Digit0:		.byte 00h, 3Ch, 46h, 4Ah, 52h, 62h, 3Ch, 00h	; 0
+2395   8B4E 3C00
+2396   8B50             DigitEnd:
+2397   8B50             
+2398   8B50             
+2399   8B50             
+2400   8B50             
+2401   8B50             
+2402   8B50             
+2403   8B50             
+2404   8B50             
+2405   8B50             
+2406   8B50             
+2407   8B50             
+2408   8B50             
+2409   8B50             
+2410   8B50             ScoreImage:
+2411   8B50             		; SCORE in 3 chars
+2412   8B50 00          		.byte 0
+2413   8B51 78          		.byte 01111000b
+2414   8B52 43          		.byte 01000011b
+2415   8B53 7A          		.byte 01111010b
+2416   8B54 0A          		.byte 00001010b
+2417   8B55 7A          		.byte 01111010b
+2418   8B56 03          		.byte 00000011b
+2419   8B57 00          		.byte 0
+2420   8B58             
+2421   8B58 00          		.byte 0
+2422   8B59 3C          		.byte 00111100b
+2423   8B5A A5          		.byte 10100101b
+2424   8B5B 25          		.byte 00100101b
+2425   8B5C 25          		.byte 00100101b
+2426   8B5D 3D          		.byte 00111101b
+2427   8B5E 81          		.byte 10000001b
+2428   8B5F 00          		.byte 0
+2429   8B60             
+2430   8B60 00          		.byte 0
+2431   8B61 0E          		.byte 00001110b
+2432   8B62 C8          		.byte 11001000b
+2433   8B63 6C          		.byte 01101100b
+2434   8B64 C8          		.byte 11001000b
+2435   8B65 6E          		.byte 01101110b
+2436   8B66 20          		.byte 00100000b
+2437   8B67 00          		.byte 0
+2438   8B68             
+2439   8B68             		; DAMAGE in 4 chars
+2440   8B68 00          		.byte 0
+2441   8B69 70          		.byte 01110000b
+2442   8B6A 49          		.byte 01001001b
+2443   8B6B 4A          		.byte 01001010b
+2444   8B6C 4B          		.byte 01001011b
+2445   8B6D 72          		.byte 01110010b
+2446   8B6E 02          		.byte 00000010b
+2447   8B6F 00          		.byte 0
+2448   8B70             
+2449   8B70 00          		.byte 0
+2450   8B71 11          		.byte 00010001b
+2451   8B72 9B          		.byte 10011011b
+2452   8B73 55          		.byte 01010101b
+2453   8B74 D1          		.byte 11010001b
+2454   8B75 51          		.byte 01010001b
+2455   8B76 40          		.byte 01000000b
+2456   8B77 00          		.byte 0
+2457   8B78             
+2458   8B78 00          		.byte 0
+2459   8B79 03          		.byte 00000011b
+2460   8B7A 32          		.byte 00110010b
+2461   8B7B 4A          		.byte 01001010b
+2462   8B7C 7A          		.byte 01111010b
+2463   8B7D 4B          		.byte 01001011b
+2464   8B7E 48          		.byte 01001000b
+2465   8B7F 00          		.byte 0
+2466   8B80             
+2467   8B80 00          		.byte 0
+2468   8B81 80          		.byte 10000000b
+2469   8B82 1C          		.byte 00011100b
+2470   8B83 D0          		.byte 11010000b
+2471   8B84 98          		.byte 10011000b
+2472   8B85 90          		.byte 10010000b
+2473   8B86 1C          		.byte 00011100b
+2474   8B87 00          		.byte 0
+2475   8B88             
+2476   8B88             		; TIME in 3 chars
+2477   8B88 00          		.byte 0
+2478   8B89 7C          		.byte 01111100b
+2479   8B8A 11          		.byte 00010001b
+2480   8B8B 10          		.byte 00010000b
+2481   8B8C 10          		.byte 00010000b
+2482   8B8D 10          		.byte 00010000b
+2483   8B8E 01          		.byte 00000001b
+2484   8B8F 00          		.byte 0
+2485   8B90             
+2486   8B90 00          		.byte 0
+2487   8B91 11          		.byte 00010001b
+2488   8B92 DB          		.byte 11011011b
+2489   8B93 95          		.byte 10010101b
+2490   8B94 91          		.byte 10010001b
+2491   8B95 91          		.byte 10010001b
+2492   8B96 C0          		.byte 11000000b
+2493   8B97 00          		.byte 0
+2494   8B98             
+2495   8B98 00          		.byte 0
+2496   8B99 00          		.byte 00000000b
+2497   8B9A 78          		.byte 01111000b
+2498   8B9B 40          		.byte 01000000b
+2499   8B9C 60          		.byte 01100000b
+2500   8B9D 40          		.byte 01000000b
+2501   8B9E 78          		.byte 01111000b
+2502   8B9F 00          		.byte 0
+2503   8BA0             		
+2504   8BA0             
+2505   8BA0             
+2506   8BA0             	; The Load Routine is position independant.  We will shift it to 32000 to save it.
+2507   8BA0             	; Start is "LoadRoutine".  Length is "LoadRoutineLength"
+2508   8BA0             		
+2509   8BA0             LoadRoutine:
+2510   8BA0             
+2511   8BA0             		; Screen Loader
+2512   8BA0 DD 21 00 40 		LD IX, 16384	; Start Address
+2513   8BA4 11 00 1B    		LD DE, 6912		; Length
+2514   8BA7 3E FF       		LD A, 255		; Data Block (not Header)
+2515   8BA9 37          		SCF				; Load, Not Verify
+2516   8BAA CD 56 05    		CALL 1366		; Load Routine
+2517   8BAD 30 13       		JR NC, LoadError; Error!
+2518   8BAF             
+2519   8BAF             		; Main Program
+2520   8BAF DD 21 00 80 		LD IX, 32768	; Start Address
+2521   8BB3 11 00 80    		LD DE, 32768	; Length (probably will error but will all load in!)
+2522   8BB6 3E FF       		LD A, 255		; Data Block (not Header)
+2523   8BB8 37          		SCF				; Load, Not Verify
+2524   8BB9 CD 56 05    		CALL 1366		; Load Routine
+2525   8BBC             
+2526   8BBC             		; Start Program		
+2527   8BBC 31 FF FF    		LD SP, 65535	; Reset Stack Pointer
+2528   8BBF C3 00 80    		JP Start		; Start of Program
+2529   8BC2             		
+2530   8BC2             		
+2531   8BC2             LoadError:
+2532   8BC2             
+2533   8BC2 21 00 40    		LD HL, 16384
+2534   8BC5 11 01 40    		LD DE, 16385
+2535   8BC8 01 00 18    		LD BC, 6144
+2536   8BCB 36 00       		LD (HL), 0
+2537   8BCD ED B0       		LDIR
+2538   8BCF 01 FF 02    		LD BC, 767
+2539   8BD2 36 46       		LD (HL), 64+6	; Yellow Ink, Black Paper, Bright
+2540   8BD4 ED B0       		LDIR
+2541   8BD6 C9          		RET
+2542   8BD7             
+2543   8BD7             
+2544   8BD7             LoadRoutineLength .equ $ - LoadRoutine
+2545   8BD7             
+2546   8BD7             	.end
+
+
+
+Type Key: N=NULL_SEG C=CODE_SEG B=BIT_SEG X=EXTD_SEG D=DATA_SEG
+          L=Local
+          E=Export
+
+Value    Type   Label
+-----    ----   ------------------------------
+8323     C      AddLevelBits                    
+007C     C      AT                              
+0008     C      BLUE                            
+0000     C      BLACK                           
+8823     CL     BigText._DM0                    
+8838     CL     BigText._DM1                    
+8848     CL     BigText._DMNextChar             
+884E     CL     BigText._DM12                   
+885D     CL     BigText._DM2                    
+8870     CL     BigText._DM_Loop5               
+8887     CL     BigText._DM14                   
+889A     CL     BigText._DMFRLoop               
+88A4     CL     BigText._DMFRSkip2              
+88A7     CL     BigText._DMFRSkip               
+8034     C      CLS                             
+8041     C      CLS_GAME                        
+804F     C      CLS_Pixels                      
+805D     C      CLS_PixelsFrom16                
+8064     C      CLS1                            
+8067     C      CLS2                            
+0078     C      COLOUR                          
+0028     C      CYAN                            
+856B     C      CalcScreenFromHero              
+8588     C      ConvertXYtoHL                   
+864D     C      CharToHL                        
+868B     C      ClearSnakeUDG                   
+80D0     C      DisplayWelcome                  
+80E9     C      DisplayLevel                    
+81FA     C      DisplayLevelResult              
+820D     C      DrawStripe                      
+83A8     C      DrawWalls                       
+83C4     C      DrawSprite                      
+840D     C      DWIXBase                        
+859A     C      DrawSnakeHead_OLD               
+85A9     C      DrawSnakeHead                   
+8691     CL     Damage._CSHLp                   
+8696     C      DrawSnakeUDG                    
+869E     CL     Damage._DSU1                    
+86B0     CL     Damage._SC0                     
+86B6     CL     Damage._SC1                     
+86C2     CL     Damage._STT0                    
+86C8     CL     Damage._STT1                    
+86CF     CL     Damage._STT2                    
+8823     C      DisplayMessage                  
+884C     C      DM_ScrollSpace                  
+885B     C      DM_ScrollEnd                    
+886A     C      DM_TestEmptyBuffer              
+8876     C      DM_KeyPress                     
+887F     C      DM_Scroll                       
+8892     C      DM_FillRight                    
+0058     C      DamageBarCol                    
+0018     C      DamageBarGoneCol                
+8919     C      DamageLeft                      
+891A     C      DamageHL                        
+895D     C      DefaultCallBack                 
+8B00     C      Digit1                          
+8B08     C      Digit2                          
+8B10     C      Digit3                          
+8B18     C      Digit4                          
+8B20     C      Digit5                          
+8B28     C      Digit6                          
+8B30     C      Digit7                          
+8B38     C      Digit8                          
+8B40     C      Digit9                          
+8B48     C      Digit0                          
+8B50     C      DigitEnd                        
+007A     C      ENDSPRITE                       
+87C7     CL     FastText._PM0                   
+0020     C      GREEN                           
+8782     CL     HalfText._PHM0                  
+8911     C      HeroXPos                        
+8912     C      HeroYPos                        
+8913     C      HeroDX                          
+8914     C      HeroDY                          
+8080     C      InitRandom                      
+815D     C      InitGame                        
+81B9     C      InitSheet                       
+86D5     C      InitLevel                       
+86E0     C      InitScore                       
+872E     C      InitTimer                       
+8770     C      InitDamage                      
+88B0     C      InputScanData                   
+007B     C      JUMP                            
+8805     CL     KeyboardScanning._SGK0          
+8812     CL     KeyboardScanning._SGK1          
+8813     CL     KeyboardScanning._SGK2          
+881F     CL     KeyboardScanning._SGK3          
+FEFE     C      KeyPortCSV                      
+FDFE     C      KeyPortAG                       
+FBFE     C      KeyPortQT                       
+F7FE     C      KeyPort15                       
+EFFE     C      KeyPort06                       
+DFFE     C      KeyPortPY                       
+BFFE     C      KeyPortENTH                     
+7FFE     C      KeyPortSPB                      
+001F     C      KempstonPort                    
+800C     C      LevelLoop                       
+8900     C      KeyData                         
+822C     CL     LevResult._DLR_Message          
+82A8     CL     LevResult._DLR_Loop1            
+82E1     CL     LevResult._DLR_End              
+82F8     CL     LevResult._TPLoop0              
+82FB     CL     LevResult._TPLoop1              
+830F     CL     LevResult._TPLoop2              
+8313     CL     LevResult._TPLoop3              
+831D     CL     LevResult._TPNextScroll         
+8326     CL     LevelBits._LevelLoop            
+834B     CL     LevelBits._LevelTest            
+834B     CL     LevelBits._Level2               
+8354     CL     LevelBits._Level3               
+835D     CL     LevelBits._Level4               
+8366     CL     LevelBits._Level5               
+8367     CL     LevelBits._Level6               
+8368     CL     LevelBits._Level7               
+8369     CL     LevelBits._Level8               
+836A     CL     LevelBits._Level9               
+836B     CL     LevelBits._Level10              
+836C     CL     LevelBits._Level11              
+836D     CL     LevelBits._Level12              
+8379     CL     LevelBits._L2a                  
+8394     CL     LevelBits._L2b                  
+83A5     CL     LevelBits._T2BSprite            
+83A7     CL     LevelBits._T2BYStep             
+83BF     CL     LevelBits._IS1                  
+83C8     CL     LevelBits._DWLoop               
+83E5     CL     LevelBits._DWChangeColour       
+83E9     CL     LevelBits._DWNewLine            
+83F0     CL     LevelBits._DWJump               
+83F6     CL     LevelBits._DWAt                 
+83FF     CL     LevelBits._DWAt0                
+8515     CL     LevelBits._RR1                  
+8567     CL     LevelBits._RRSkipVWrap          
+85B8     CL     LevelBits._DSHLoop              
+85E6     CL     LevelBits._UP1                  
+85F9     CL     LevelBits._UP2                  
+860C     CL     LevelBits._UP3                  
+861F     CL     LevelBits._UP4                  
+8632     CL     LevelBits._UP5                  
+863A     CL     LevelBits._UPAfterKeys          
+891F     C      Level                           
+8A34     C      LevelXXMsg                      
+8A3A     C      LevelXXMsg2                     
+8A43     C      LevelEndMsg00                   
+8A3D     C      LevelEndMsg1                    
+8A5B     C      LevelEndMsg01                   
+8A65     C      LevelEndMsg02                   
+8A4E     C      LevelEndMsg2                    
+8A6F     C      LevelEndMsg03                   
+8A71     C      LevelEndMsg04                   
+8A69     C      LevelEndMsg3                    
+8A75     C      LevelEndMsg4                    
+8BA0     C      LoadRoutine                     
+8BC2     C      LoadError                       
+0037     C      LoadRoutineLength               
+809B     CL     MainFunctions._Rand0            
+80B7     CL     MainFunctions._WKPLp            
+80C5     CL     MainFunctions._WNKPLp           
+81D9     CL     MainFunctions._IS2              
+0018     C      MAGENTA                         
+0079     C      NEWLINE                         
+801A     C      PlayLevel                       
+877C     C      PrintHalfMsg                    
+878E     C      PrintHalfChar                   
+87C7     C      PrintMessage                    
+87D3     C      PrintChar                       
+87D9     C      PrintCharAtDE                   
+800C     C      RunGame                         
+8089     C      Random                          
+0010     C      RED                             
+8507     C      RenderRoom                      
+C000     C      RoomBuffer                      
+0080     C      RoomWidth                       
+0040     C      RoomHeight                      
+007F     C      RoomWidthMask                   
+003F     C      RoomHeightMask                  
+2000     C      RoomBufSize                     
+0007     C      RoomSpaceCol                    
+0016     C      RoomWallCol                     
+8000     C      Start                           
+80AD     C      SafeWaitKey                     
+840F     C      SpriteFlower                    
+8461     C      SpriteGrass                     
+84AE     C      SpriteTree                      
+86AB     C      SoundCrash                      
+86C0     C      SoundTimerTick                  
+8708     CL     Score._US0                      
+8727     CL     Score._US1                      
+87FF     C      ScanGameKeys                    
+8901     C      SnakeHeadBuffer                 
+0008     C      SnakeHeadBufferLen              
+0010     C      ScoreBarCol                     
+8915     C      ScreenXPos                      
+8916     C      ScreenYPos                      
+8917     C      ScreenHL                        
+8920     C      Score                           
+8922     C      ScoreHLs                        
+892E     C      Seed                            
+8930     C      ScratchHL                       
+8932     C      SnakeUp                         
+893A     C      SnakeRight                      
+8942     C      SnakeDown                       
+894A     C      SnakeLeft                       
+8952     C      StartPosition                   
+8952     C      ScrollCharBuf                   
+895A     C      ScrollCallBack                  
+895C     C      ScrollFlags                     
+8B50     C      ScoreImage                      
+80A3     C      TestKeyPress                    
+82F6     C      TransitionPixels                
+836E     C      Top2BottomFill                  
+865D     C      TestDamage                      
+0060     C      TimerBarCol                     
+0020     C      TimerBarGoneCol                 
+891C     C      TimerLeft                       
+891D     C      TimerHL                         
+892C     C      TimerLoReset                    
+892D     C      TimerLo                         
+85CF     C      UpdatePosition                  
+86DB     C      UpdateLevel                     
+86F9     C      UpdateScore                     
+874D     C      UpdateTimer                     
+80B4     C      WaitKeyPress                    
+80C2     C      WaitNoKeyPress                  
+80FD     C      Write2DDADigitsIntoMsg          
+810F     C      Write5BinDigitsIntoMsg          
+8115     C      W2BLoop1                        
+811C     C      W2BSkip1                        
+8122     C      Write4BinDigitsIntoMsg          
+8128     C      W2BLoop2                        
+812F     C      W2BSkip2                        
+8135     C      Write3BinDigitsIntoMsg          
+813B     C      W2BLoop3                        
+8142     C      W2BSkip3                        
+814C     C      Write2BinDigitsIntoMsg          
+814E     C      WBDLoop                         
+8157     C      WBDOut                          
+82EF     C      Wait                            
+0038     C      WHITE                           
+895E     C      WelcomeMsg                      
+0030     C      YELLOW                          
+
+tasm: Number of errors = 0
