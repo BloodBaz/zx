@@ -171,10 +171,9 @@ Here are the extracted block data:
 
 |   | Tune 1 Channel 1 |Tune 1  Channel 2 | Tune 2 Channel 1 | Tune 2 Channel 2 | Tune 3 Channel 1 | Tune  3Channel 2 |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| (base)   | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC |
-| Start Addr | C5A8 | 50600 | C6C9 | 50889 | C7EA | 51178 | C97B | 51579 | C5A8 | 50600 | C6C9 | 50889 |
-| End Addr | C6C8 | 50888 | C7E9 | 51177 | C97A | 51578 | CB0B | 51979 | C6C8 | 50888 | C7E9 | 51177 |
-| Length | 0120 | 288 | 0120 | 288 | 0190 | 400 | 0190 | 400 | 0120 | 288 | 0120 | 288 |
+| Start Addr | C5A8h (50600) | C6C9h (50889) | C7EAh (51178) | C97Bh (51579) | C5A8h (50600) | C6C9h (50889) |
+| End Addr   | C6C8h (50888) | C7E9h (51177) | C97Ah (51578) | CB0Bh (51979) | C6C8h (50888) | C7E9h (51177) |
+| Length     | 0120h   (288) | 0120h (288)   | 0190h   (400) | 0190h   (400) | 0120h   (288) | 0120h   (288) |
 
 
 ## Extracting the note data
