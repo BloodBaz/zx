@@ -21,7 +21,7 @@ There are a number of technical areas required in order to achieve this:
 These technical areas will overlap but the above is a rough order in which we have to look at them.
 
 ## A Spectrum Emulator
-In the old days, most people only had the Spectrum itself in which to debug code, which was very limiting - even with hardware add-ons such as the *Currah Multiface* that allowed you to stop any program and step though code.  Nowadays, we are blessed with Spectrum Emulators with inbuilt debuggers that make the job far easier.
+In the old days, most people only had the Spectrum itself in which to debug code, which was very limiting - even with hardware add-ons such as the *Romantic Robot Multiface* that allowed you to stop any program and step though code.  Nowadays, we are blessed with Spectrum Emulators with inbuilt debuggers that make the job far easier.
 
 My emulator of choice is [Spectaculator](https://www.spectaculator.com/).  If you want to follow the process then the following shortcuts will be useful to know:
 
