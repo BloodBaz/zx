@@ -169,14 +169,12 @@ It is now easy to locate the music data for the two channels.  We can breakpoint
 
 Here are the extracted block data:
 
-|   | Tune 1 |   | Tune 2 |   | Tune 3 |   |
-|   | Channel 1 | Channel 2 | Channel 1 | Channel 2 | Channel 1 | Channel 2 |
+|   | Tune 1 Channel 1 |Tune 1  Channel 2 | Tune 2 Channel 1 | Tune 2 Channel 2 | Tune 3 Channel 1 | Tune  3Channel 2 |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC |
+| (base)   | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC |
 | Start Addr | C5A8 | 50600 | C6C9 | 50889 | C7EA | 51178 | C97B | 51579 | C5A8 | 50600 | C6C9 | 50889 |
 | End Addr | C6C8 | 50888 | C7E9 | 51177 | C97A | 51578 | CB0B | 51979 | C6C8 | 50888 | C7E9 | 51177 |
 | Length | 0120 | 288 | 0120 | 288 | 0190 | 400 | 0190 | 400 | 0120 | 288 | 0120 | 288 |
-| ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 
 
 ## Extracting the note data
@@ -184,9 +182,3 @@ I’m interested in Tune 2 so I took a memory snapshot of the game while in memo
 
 ## Converting note data to “notes”
 This is something I’ve not done before but it all went pretty smoothly.
-
-
-
-
-
-
