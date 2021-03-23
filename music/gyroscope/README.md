@@ -47,7 +47,7 @@ When I entered the debugger, I ended up with the PC counter at address C548.  Th
 
 ![Figure 1: The pause routine](assets/img/01-the-pause-routine.png "Figure 1: The pause routine")
 
-What I’ve actually stumbled upon is a “pause” routine which carefully plays a rest within the tune.  The length of the pause is determined the value of the C register (the low the value, the longer the rest).  If you are familiar with Z80 assembly code you should recognise that the value in the C register is incremented once per run of the outermost loop (blue) and the routine will exit when C is incremented past FFh (255) and goes back to 00h (0) causing the Z flag to be set and the routine to exist. 
+What I’ve actually stumbled upon is a “pause” routine which carefully plays a rest within the tune.  The length of the pause is determined the value of the C register (the low the value, the longer the rest).  If you are familiar with Z80 assembly code you should recognise that the value in the C register is incremented once per run of the outermost loop (blue) and the routine will exit when C is incremented past FFh (255) and goes back to 00h (0) causing the Z flag to be set and the routine to exit. 
 
 We can make note (no pun intended) of the address of this pause routine (C542h) for later.  Meanwhile, pressing “step out” SHIFT+F11 will run the code until it exits which lands me at C4CFh.
 
@@ -62,9 +62,9 @@ This loop comprises of calls to two subroutines, an increment of the E register 
 
 We can use F10 to step through this loop without going into the actual routines. Doing so, we observe the following:
 
-•	The CALL C4EEh instruction plays a single note (well, two notes simultaneously) or a pause (rest) note.
-•	The CALL 028Eh is a call into ROM
-•	The value of the E register after the call into ROM is always FFh (causing the routine to keep looping to the next note)
+ - The CALL C4EEh instruction plays a single note (well, two notes simultaneously) or a pause (rest) note.
+ - The CALL 028Eh is a call into ROM
+ - The value of the E register after the call into ROM is always FFh (causing the routine to keep looping to the next note)
 
 As this loop is actually playing each note, I’ve called this the “main loop” routine.
 
@@ -120,7 +120,7 @@ So, returning to the Single Note routine, we appear to have our two “note” v
 
 I’m going to jump ahead here and explain the next section of code with the hindsight of having explored it and learned what it does.  However, the two calls of the “Get Next Note” routine that we’ve already seen forms part of a number of initialisation steps that occur prior to playing the actual note.  These handle the type of note to play (two sounds, one sound, a rest) as well as getting the fixed duration of the note to play.
 
-![Figure 4: Note initialisation](assets/img/05-note-initialisation.png "Figure 5: Note initialisation")
+![Figure 5: Note initialisation](assets/img/05-note-initialisation.png "Figure 5: Note initialisation")
 
 **Red block**: We’ve already learned what this does above.  The 16-bit values at C4D6h and C4D8h are the current position of the first and second note to play (respectively). The routine at C4DBh retrieved these values and moved the positions on one byte. The values are now in D and H, and E and L both hold 01h (1).
 
@@ -169,8 +169,8 @@ It is now easy to locate the music data for the two channels.  We can breakpoint
 
 Here are the extracted block data:
 
-| | Tune 1 | | Tune 2 | | Tune 3 | |
-| | Channel 1 | Channel 2 | Channel 1 | Channel 2 | Channel 1 | Channel 2 |
+|   | Tune 1 |   | Tune 2 |   | Tune 3 |   |
+|   | Channel 1 | Channel 2 | Channel 1 | Channel 2 | Channel 1 | Channel 2 |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC |
 | Start Addr | C5A8 | 50600 | C6C9 | 50889 | C7EA | 51178 | C97B | 51579 | C5A8 | 50600 | C6C9 | 50889 |
@@ -179,10 +179,42 @@ Here are the extracted block data:
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 
 ## Extracting the note data
-I’m interested in Tune 2 so I took a memory snapshot of the game while in memory and used a hex editor (HxD) to retrieve the 800 bytes of data from Tune 1 and dropped them in an Excel Spreadsheet.
+We know where the note data is stored.  We need to extract this data which is done by:
+1. Exporting binary data from the Spectrum Memory to file.  We can do this from *Spectaculator* by going to File > Export... and entering the start address and length of the data you wish to export (save to a .bin file for convention)
+2. Open the binary file in a Hex Editor such as [HxD](https://mh-nexus.de/en/hxd/).
+3. Copy binary data from Hex Editor into a Text Editor such as [Notepad++](https://notepad-plus-plus.org/downloads/)
+4. Format into a column of numbers
+5. Paste into a Spreadsheet such as Microsoft Excel or [Libreoffice Calc](https://www.libreoffice.org/discover/calc/).
+ 
+You could choose to export each channel of each tune at step 1 - giving you six separate bin files but I choose to export the whole of the Spectrum's memory (Start Address: 0000h (0), Length: 10000h (65536)) in step 1 and then locate the note data for each channel/tune within the Hex Editor.  The reason for this is that I can visually check that the data I'm copying out of the Hex Editor.  Does the data end with the "End of Tune" marker byte: 02h (2)?  Does the block appear to start straight after the prevous block? etc.
+
+![Figure 7: Exporting Tune 2 Channel 1 Note Data](assets/img/07-export-note-data.png "Figure 7: Exporting Tune 2 Channel 1 Note Data")
+
+![Figure 8: Selecting a block of data (CTRL+E) to copy (CTRL+C) into Notepad++](assets/img/08-copying-note-data-from-hxd.png "Figure 8: Selecting a block of data (CTRL+E) to copy (CTRL+C) into Notepad++")
+
+![Figure 9: Replacing spaces with new lines in Notepad++ so note data is in a single column for Spreadsheet](assets/img/09-replacing-spaces-with-newlines-in-notepad.png "Figure 9: Replacing spaces with new lines in Notepad++ so note data is in a single column for Spreadsheet")
+
+![Figure 10: Note Data in Spreadsheet (blue text)](assets/img/10-note-data-in-spreadsheet "Figure 10: Note Data in Spreadsheet (blue text)")
+
+Once you have the two channels for one tune in the spreadsheet you can place a column next to it with the decimal representation of the hex value using the formula: *=HEX2DEC(C10)* (C10 is the cell holding the first Hex value of Channel 1).  We need to decimal values because we are going to get the spreadsheet to do calculations on this value to work out the frequency of the note based on the note value.
 
 ## Converting note data to “notes”
-This is something I’ve not done before but it all went pretty smoothly.
+This is something I’ve not done before but it all went pretty smoothly as I already have a good understanding of music and how [equal temperament tuning](https://en.wikipedia.org/wiki/Equal_temperament) works. The TL;DR of equal temperament is that each seminote is 12√2 higher than the note 1 semitone lower.  So the ratio of the frequency between octaves (which comprises of 12 semitones) is (12√2)^12 = 2.0. 
+
+Given a base frequency, a spreadsheet can easily work out the frequency of all semitones and we can give each semitone a lookup name such as C3 for the note C in "octive 3", C#3 for the note 1 semitone higher etc.
+
+Before we can build our "frequency to note mapper" however, we need to work out the base frequency.
+Here is what we know so far:
+ - The ZX Spectrum runs at 3.54MHz so a single T-State is 1/3.54Mhz (CLOCK_SPEED = 2.82 x 10^-7)
+ - The inner most loop of note playing takes 96 T States based on our findings above (LOOP_TSTATES = 96)
+ - Therefore a single note count takes CLOCK_SPEED x LOOP_TSTATES (NOTE_CLOCK = 2.71 x 10^-5)
+
+The first notes of Tune 2 are 80h (128) and 40h (64) for the two channels.  80h is the lowest note of the piece but more importantly it is the tonic of the piece. All three pieces are in a minor key so to make things easy, we will take that 80h is C in octave 4.
+
+To be continued...
+
+
+
 
 
 
