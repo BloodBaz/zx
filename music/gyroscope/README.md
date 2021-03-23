@@ -207,7 +207,6 @@ You could choose to export each channel of each tune at step 1 - giving you six 
 Once you have the two channels for one tune in the spreadsheet you can place a column next to it with the decimal representation of the hex value using the formula: *=HEX2DEC(C10)* (C10 is the cell holding the first Hex value of Channel 1).  We need to decimal values because we are going to get the spreadsheet to do calculations on this value to work out the frequency of the note based on the note value.
 
 ## Converting note data to “notes”
-<<<<<<< HEAD
 This is something I’ve not done before but it all went pretty smoothly as I already have a good understanding of music and how [equal temperament tuning](https://en.wikipedia.org/wiki/Equal_temperament) works. The TL;DR of equal temperament is that each seminote is 12√2 higher than the note 1 semitone lower.  So the ratio of the frequency between octaves (which comprises of 12 semitones) is (12√2)^12 = 2.0. 
 
 Given a base frequency, a spreadsheet can easily work out the frequency of all semitones and we can give each semitone a lookup name such as C3 for the note C in "octive 3", C#3 for the note 1 semitone higher etc.
@@ -221,15 +220,3 @@ Here is what we know so far:
 The first notes of Tune 2 are 80h (128) and 40h (64) for the two channels.  80h is the lowest note of the piece but more importantly it is the tonic of the piece. All three pieces are in a minor key so to make things easy, we will take that 80h is C in octave 4.
 
 To be continued...
-
-
-
-
-
-
-
-
-
-=======
-This is something I’ve not done before but it all went pretty smoothly.
->>>>>>> 87c954df08005c5e02fcf905525739e91b76fa51
