@@ -169,22 +169,11 @@ It is now easy to locate the music data for the two channels.  We can breakpoint
 
 Here are the extracted block data:
 
-<<<<<<< HEAD
-|   | Tune 1 |   | Tune 2 |   | Tune 3 |   |
-|   | Channel 1 | Channel 2 | Channel 1 | Channel 2 | Channel 1 | Channel 2 |
-| ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-| HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC | HEX | DEC |
-| Start Addr | C5A8 | 50600 | C6C9 | 50889 | C7EA | 51178 | C97B | 51579 | C5A8 | 50600 | C6C9 | 50889 |
-| End Addr | C6C8 | 50888 | C7E9 | 51177 | C97A | 51578 | CB0B | 51979 | C6C8 | 50888 | C7E9 | 51177 |
-| Length | 0120 | 288 | 0120 | 288 | 0190 | 400 | 0190 | 400 | 0120 | 288 | 0120 | 288 |
-=======
-|   | Tune 1 Channel 1 |Tune 1  Channel 2 | Tune 2 Channel 1 | Tune 2 Channel 2 | Tune 3 Channel 1 | Tune  3Channel 2 |
->>>>>>> 87c954df08005c5e02fcf905525739e91b76fa51
+|   | Tune 1 Channel 1 |Tune 1  Channel 2 | Tune 2 Channel 1 | Tune 2 Channel 2 | Tune 3 Channel 1 | Tune  3 Channel 2 |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
 | Start Addr | C5A8h (50600) | C6C9h (50889) | C7EAh (51178) | C97Bh (51579) | C5A8h (50600) | C6C9h (50889) |
 | End Addr   | C6C8h (50888) | C7E9h (51177) | C97Ah (51578) | CB0Bh (51979) | C6C8h (50888) | C7E9h (51177) |
 | Length     | 0120h   (288) | 0120h (288)   | 0190h   (400) | 0190h   (400) | 0120h   (288) | 0120h   (288) |
-
 
 ## Extracting the note data
 We know where the note data is stored.  We need to extract this data which is done by:
@@ -202,7 +191,7 @@ You could choose to export each channel of each tune at step 1 - giving you six 
 
 ![Figure 9: Replacing spaces with new lines in Notepad++ so note data is in a single column for Spreadsheet](assets/img/09-replacing-spaces-with-newlines-in-notepad.png "Figure 9: Replacing spaces with new lines in Notepad++ so note data is in a single column for Spreadsheet")
 
-![Figure 10: Note Data in Spreadsheet (blue text)](assets/img/10-note-data-in-spreadsheet "Figure 10: Note Data in Spreadsheet (blue text)")
+![Figure 10: Note Data in Spreadsheet (blue text)](assets/img/10-note-data-in-spreadsheet.png "Figure 10: Note Data in Spreadsheet (blue text)")
 
 Once you have the two channels for one tune in the spreadsheet you can place a column next to it with the decimal representation of the hex value using the formula: *=HEX2DEC(C10)* (C10 is the cell holding the first Hex value of Channel 1).  We need to decimal values because we are going to get the spreadsheet to do calculations on this value to work out the frequency of the note based on the note value.
 
