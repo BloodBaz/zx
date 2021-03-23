@@ -21,7 +21,7 @@ There are a number of technical areas required in order to achieve this:
 These technical areas will overlap but the above is a rough order in which we have to look at them.
 
 ## A Spectrum Emulator
-In the old days, most people only had the Spectrum itself in which to debug code, which was very limiting - even with hardware add-ons such as the *Currah Multiface* that allowed you to stop any program and step though code.  Nowadays, we are blessed with Spectrum Emulators with inbuilt debuggers that make the job far easier.
+In the old days, most people only had the Spectrum itself in which to debug code, which was very limiting - even with hardware add-ons such as the *Romantic Robot Multiface* that allowed you to stop any program and step though code.  Nowadays, we are blessed with Spectrum Emulators with inbuilt debuggers that make the job far easier.
 
 My emulator of choice is [Spectaculator](https://www.spectaculator.com/).  If you want to follow the process then the following shortcuts will be useful to know:
 
@@ -169,6 +169,7 @@ It is now easy to locate the music data for the two channels.  We can breakpoint
 
 Here are the extracted block data:
 
+<<<<<<< HEAD
 |   | Tune 1 |   | Tune 2 |   | Tune 3 |   |
 |   | Channel 1 | Channel 2 | Channel 1 | Channel 2 | Channel 1 | Channel 2 |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
@@ -176,7 +177,14 @@ Here are the extracted block data:
 | Start Addr | C5A8 | 50600 | C6C9 | 50889 | C7EA | 51178 | C97B | 51579 | C5A8 | 50600 | C6C9 | 50889 |
 | End Addr | C6C8 | 50888 | C7E9 | 51177 | C97A | 51578 | CB0B | 51979 | C6C8 | 50888 | C7E9 | 51177 |
 | Length | 0120 | 288 | 0120 | 288 | 0190 | 400 | 0190 | 400 | 0120 | 288 | 0120 | 288 |
+=======
+|   | Tune 1 Channel 1 |Tune 1  Channel 2 | Tune 2 Channel 1 | Tune 2 Channel 2 | Tune 3 Channel 1 | Tune  3Channel 2 |
+>>>>>>> 87c954df08005c5e02fcf905525739e91b76fa51
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+| Start Addr | C5A8h (50600) | C6C9h (50889) | C7EAh (51178) | C97Bh (51579) | C5A8h (50600) | C6C9h (50889) |
+| End Addr   | C6C8h (50888) | C7E9h (51177) | C97Ah (51578) | CB0Bh (51979) | C6C8h (50888) | C7E9h (51177) |
+| Length     | 0120h   (288) | 0120h (288)   | 0190h   (400) | 0190h   (400) | 0120h   (288) | 0120h   (288) |
+
 
 ## Extracting the note data
 We know where the note data is stored.  We need to extract this data which is done by:
@@ -199,6 +207,7 @@ You could choose to export each channel of each tune at step 1 - giving you six 
 Once you have the two channels for one tune in the spreadsheet you can place a column next to it with the decimal representation of the hex value using the formula: *=HEX2DEC(C10)* (C10 is the cell holding the first Hex value of Channel 1).  We need to decimal values because we are going to get the spreadsheet to do calculations on this value to work out the frequency of the note based on the note value.
 
 ## Converting note data to “notes”
+<<<<<<< HEAD
 This is something I’ve not done before but it all went pretty smoothly as I already have a good understanding of music and how [equal temperament tuning](https://en.wikipedia.org/wiki/Equal_temperament) works. The TL;DR of equal temperament is that each seminote is 12√2 higher than the note 1 semitone lower.  So the ratio of the frequency between octaves (which comprises of 12 semitones) is (12√2)^12 = 2.0. 
 
 Given a base frequency, a spreadsheet can easily work out the frequency of all semitones and we can give each semitone a lookup name such as C3 for the note C in "octive 3", C#3 for the note 1 semitone higher etc.
@@ -221,3 +230,6 @@ To be continued...
 
 
 
+=======
+This is something I’ve not done before but it all went pretty smoothly.
+>>>>>>> 87c954df08005c5e02fcf905525739e91b76fa51
